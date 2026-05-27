@@ -34,7 +34,6 @@
       - "ccache : {{ _openwrt_use_ccache }}"
       - "tmpfs  : {{ openwrt_tmpfs_enabled | default(true) }}"
 
-# tmpfs: rimuovi tmp/ (creata dal clone con file dentro) e ricrea come symlink
 - name: Rimuovi tmp/ esistente per fare spazio al symlink
   ansible.builtin.file:
     path: "{{ openwrt_src_dir }}/tmp"
@@ -48,7 +47,6 @@
     state: link
   when: openwrt_tmpfs_enabled | default(true) | bool
 
-# Se tmpfs disabilitato, ricrea tmp/ come directory normale
 - name: Crea directory openwrt/tmp (tmpfs disabilitato)
   ansible.builtin.file:
     path: "{{ openwrt_src_dir }}/tmp"
@@ -76,6 +74,10 @@
   environment: "{{ _openwrt_build_env }}"
   changed_when: true
 
+# Compila con jobs paralleli. In caso di errore riprova verboso.
+# ignore_errors: true perche' pacchetti non critici (es. intel-microcode)
+# possono fallire senza compromettere i firmware reali.
+# Il task successivo verifica che i firmware siano stati prodotti.
 - name: Compila firmware (parallelo, fallback verbose)
   ansible.builtin.shell: |
     make -j{{ _make_jobs }} || make -j4 V=s
@@ -84,5 +86,35 @@
     executable: /bin/bash
   environment: "{{ _openwrt_build_env }}"
   changed_when: true
+  ignore_errors: true
+  register: _build_result
   async: 7200
   poll: 30
+
+# Verifica che i firmware siano stati prodotti anche se make ha restituito errore
+- name: Verifica firmware prodotti in bin/targets
+  ansible.builtin.find:
+    paths: "{{ openwrt_src_dir }}/bin/targets"
+    patterns:
+      - "*-sysupgrade.bin"
+      - "*-factory.bin"
+      - "*.img.gz"
+      - "*.img"
+    recurse: true
+    file_type: file
+  register: _build_firmware_check
+
+- name: Fallisci se nessun firmware prodotto (build realmente fallita)
+  ansible.builtin.fail:
+    msg: >
+      Build fallita: nessun firmware trovato in bin/targets/.
+      Errore make: {{ _build_result.stderr | default('') | truncate(500) }}
+  when: _build_firmware_check.files | length == 0
+
+- name: "Firmware prodotti: {{ _build_firmware_check.files | length }} file"
+  ansible.builtin.debug:
+    msg: "{{ _build_firmware_check.files | map(attribute='path') | map('basename') | list }}"
+
+# Nota ccache: il Makefile di OpenWrt usa CONFIG_CCACHE=y per abilitare ccache
+# internamente tramite staging_dir/host/bin/ccache.
+# Non serve wrappare CC/CXX manualmente.
