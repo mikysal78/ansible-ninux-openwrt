@@ -1,0 +1,140 @@
+---
+- name: Build Ninux OpenWrt - varianti in parallelo per device
+  hosts: build_hosts
+  gather_facts: true
+
+  vars_files:
+    - "{{ playbook_dir }}/../config/build.yml"
+
+  pre_tasks:
+    - name: Valida variabile org
+      ansible.builtin.assert:
+        that:
+          - openwrt_org is defined and openwrt_org | length > 0
+        fail_msg: "Definisci openwrt_org in config/build.yml o con -e openwrt_org=xxx"
+
+    - name: Scopri device disponibili per org
+      ansible.builtin.find:
+        paths: "{{ openwrt_work_dir }}/config/organizations/{{ openwrt_org }}"
+        patterns: "*.config"
+        file_type: file
+      register: _discovered_configs
+
+    - name: Fallisci se non ci sono config
+      ansible.builtin.fail:
+        msg: "Nessun .config trovato in config/organizations/{{ openwrt_org }}/"
+      when: _discovered_configs.files | length == 0
+
+    - name: Estrai lista device
+      ansible.builtin.set_fact:
+        _discovered_targets: >-
+          {{ _discovered_configs.files
+             | map(attribute='path')
+             | map('basename')
+             | map('regex_replace', '\.config$', '')
+             | sort | list }}
+
+    - name: Costruisci lista varianti (VPN x CP)
+      ansible.builtin.set_fact:
+        _variant_matrix: >-
+          {{
+            _variant_matrix | default([]) + [{'vpn': item.0, 'cp': item.1}]
+          }}
+      loop: >-
+        {{
+          openwrt_vpn_variants
+          | product([false, true] if openwrt_cp_variants | bool else [openwrt_captive_portal | default(false) | bool])
+          | list
+        }}
+      loop_control:
+        label: "VPN={{ item.0 }} CP={{ item.1 }}"
+
+    - name: Piano di build
+      ansible.builtin.debug:
+        msg: |
+          ============================================
+          Org            : {{ openwrt_org }}
+          Versione       : {{ openwrt_version }}
+          Device         : {{ _discovered_targets | join(', ') }}
+          Varianti/device: {{ _variant_matrix | length }}
+          Totale firmware: {{ _discovered_targets | length * _variant_matrix | length }}
+          Strategia      : 1 device per volta, {{ _variant_matrix | length }} varianti in parallelo
+          Jobs make      : {{ ansible_processor_nproc | int + openwrt_make_jobs_extra | default(2) | int }}
+          ccache         : {{ openwrt_ccache_dir }} ({{ openwrt_ccache_maxsize }})
+          tmpfs          : {{ openwrt_tmpfs_enabled }} ({{ openwrt_tmpfs_size }})
+          ============================================
+          {% for t in _discovered_targets %}
+          Device {{ loop.index }}: {{ t }}
+          {% for v in _variant_matrix %}
+            → VPN={{ v.vpn }} CP={{ v.cp }}
+          {% endfor %}
+          {% endfor %}
+
+  tasks:
+    - name: "Build device per device"
+      ansible.builtin.include_tasks: _build_device_variants.yml
+      loop: "{{ _discovered_targets }}"
+      loop_control:
+        loop_var: target_item
+        label: "{{ target_item }}"
+
+  post_tasks:
+    - name: Pulizia finale
+      ansible.builtin.shell: |
+        echo "=== Spazio prima della pulizia ==="
+        df -h {{ openwrt_work_dir }} | tail -1
+        du -sh {{ openwrt_work_dir }}/build 2>/dev/null || true
+
+        echo "=== Rimozione build_dir e staging_dir ==="
+        rm -rf {{ openwrt_work_dir }}/build/openwrt/build_dir
+        rm -rf {{ openwrt_work_dir }}/build/openwrt/staging_dir
+        rm -rf {{ openwrt_work_dir }}/build/openwrt/bin
+
+        {% if openwrt_cleanup_sources | bool %}
+        echo "=== Rimozione sorgenti OpenWrt ==="
+        rm -rf {{ openwrt_work_dir }}/build/openwrt
+        {% endif %}
+
+        echo "=== Svuota tmpfs ==="
+        find {{ openwrt_tmpfs_path }} -mindepth 1 -delete 2>/dev/null || true
+
+        echo "=== Spazio dopo la pulizia ==="
+        df -h {{ openwrt_work_dir }} | tail -1
+      args:
+        executable: /bin/bash
+      become: true
+      changed_when: true
+
+    - name: Smonta tmpfs
+      ansible.builtin.command:
+        cmd: "umount {{ openwrt_tmpfs_path }}"
+      become: true
+      failed_when: false
+      changed_when: true
+      when: openwrt_tmpfs_enabled | bool
+
+    - name: Statistiche ccache finali
+      ansible.builtin.command:
+        cmd: ccache --show-stats
+      environment:
+        CCACHE_DIR: "{{ openwrt_ccache_dir }}"
+      register: _ccache_final
+      changed_when: false
+      when: openwrt_ccache_enabled | bool
+
+    - name: ccache stats
+      ansible.builtin.debug:
+        msg: "{{ _ccache_final.stdout_lines }}"
+      when: openwrt_ccache_enabled | bool
+
+    - name: Riepilogo firmware prodotti
+      ansible.builtin.shell: |
+        find {{ openwrt_output_dir }} -type f \
+          \( -name "*-sysupgrade*" -o -name "*-factory*" -o -name "*.img.gz" \) \
+          | sort
+      register: _firmware_list
+      changed_when: false
+
+    - name: Firmware compilati
+      ansible.builtin.debug:
+        msg: "{{ _firmware_list.stdout_lines }}"

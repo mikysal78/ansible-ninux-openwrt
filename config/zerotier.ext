@@ -1,0 +1,2 @@
+# Estensione ZeroTier VPN
+CONFIG_PACKAGE_zerotier=y

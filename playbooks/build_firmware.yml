@@ -1,0 +1,60 @@
+---
+- name: Build Ninux OpenWrt firmware - tutte le varianti VPN
+  hosts: build_hosts
+  gather_facts: true
+
+  vars_files:
+    - "{{ playbook_dir }}/../config/build.yml"
+
+  # openwrt_work_dir puo' essere passato via -e (da _build_device_variants.yml)
+  # oppure viene da config/build.yml (playbook_dir/.. = root repo).
+  # In entrambi i casi deve essere un path assoluto.
+
+  pre_tasks:
+    - name: Verifica che openwrt_work_dir sia assoluto
+      ansible.builtin.assert:
+        that:
+          - openwrt_work_dir is defined
+          - openwrt_work_dir | length > 0
+          - openwrt_work_dir.startswith('/')
+        fail_msg: "openwrt_work_dir non e' un path assoluto: '{{ openwrt_work_dir }}'"
+
+    - name: Debug paths
+      ansible.builtin.debug:
+        msg:
+          - "work_dir   : {{ openwrt_work_dir }}"
+          - "output_dir : {{ openwrt_output_dir }}"
+          - "src_dir    : {{ openwrt_src_dir }}"
+
+    - name: Valida variabili obbligatorie
+      ansible.builtin.assert:
+        that:
+          - openwrt_org is defined and openwrt_org | length > 0
+          - openwrt_target is defined and openwrt_target | length > 0
+          - openwrt_vpn_variants is defined and openwrt_vpn_variants | length > 0
+        fail_msg: "Definisci openwrt_org e openwrt_target"
+
+    - name: Costruisce matrice di build
+      ansible.builtin.set_fact:
+        _build_matrix: "{{ _build_matrix | default([]) + [{'vpn': item.0, 'cp': item.1}] }}"
+      loop: "{{ openwrt_vpn_variants | product([false, true] if openwrt_cp_variants | bool else [openwrt_captive_portal | default(false) | bool]) | list }}"
+      loop_control:
+        label: "VPN={{ item.0 }} CP={{ item.1 }}"
+
+    - name: Piano di build
+      ansible.builtin.debug:
+        msg: |
+          Org={{ openwrt_org }} Target={{ openwrt_target }} Ver={{ openwrt_version }}
+          {% for b in _build_matrix %}[{{ loop.index }}] VPN={{ b.vpn }} CP={{ b.cp }}
+          {% endfor %}
+
+  tasks:
+    - name: "Build VPN={{ item.vpn }} CP={{ item.cp }}"
+      ansible.builtin.include_role:
+        name: ninux_build_openwrt
+      vars:
+        openwrt_vpn: "{{ item.vpn }}"
+        openwrt_captive_portal: "{{ item.cp }}"
+      loop: "{{ _build_matrix }}"
+      loop_control:
+        label: "VPN={{ item.vpn }} CP={{ item.cp }}"

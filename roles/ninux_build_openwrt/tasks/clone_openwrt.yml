@@ -1,0 +1,41 @@
+---
+# tasks/clone_openwrt.yml - Clone / update upstream OpenWrt source
+
+- name: Verifica se OpenWrt source esiste già (.git)
+  ansible.builtin.stat:
+    path: "{{ openwrt_src_dir }}/.git"
+  register: _openwrt_git_dir
+
+- name: Verifica se la directory esiste ma e' vuota/corrotta (senza .git)
+  ansible.builtin.stat:
+    path: "{{ openwrt_src_dir }}"
+  register: _openwrt_dir
+
+- name: Rimuovi directory openwrt corrotta (esiste ma senza .git)
+  ansible.builtin.file:
+    path: "{{ openwrt_src_dir }}"
+    state: absent
+  when:
+    - _openwrt_dir.stat.exists
+    - not _openwrt_git_dir.stat.exists
+
+- name: Clone OpenWrt upstream (prima volta)
+  ansible.builtin.git:
+    repo: "{{ openwrt_upstream_repo }}"
+    dest: "{{ openwrt_src_dir }}"
+    version: "{{ openwrt_version }}"
+    force: false
+  when: not _openwrt_git_dir.stat.exists
+
+- name: Fetch tutti i ref nel repo esistente
+  ansible.builtin.command:
+    cmd: git fetch --all --tags
+    chdir: "{{ openwrt_src_dir }}"
+  when: _openwrt_git_dir.stat.exists
+  changed_when: false
+
+- name: Checkout versione OpenWrt
+  ansible.builtin.command:
+    cmd: "git checkout -f {{ openwrt_version }}"
+    chdir: "{{ openwrt_src_dir }}"
+  changed_when: true

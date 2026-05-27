@@ -1,0 +1,46 @@
+---
+# tasks/rootfiles.yml - Prepara overlay root_files nel buildroot OpenWrt
+
+- name: Rimuovi overlay files esistente
+  ansible.builtin.file:
+    path: "{{ openwrt_src_dir }}/files"
+    state: absent
+
+- name: Crea directory uci-defaults per org
+  ansible.builtin.file:
+    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults"
+    state: directory
+    mode: "0755"
+
+- name: Scrivi uci-default 99-br-cp (Captive Portal abilitato)
+  ansible.builtin.template:
+    src: 99-br-cp.j2
+    dest: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-br-cp"
+    mode: "0755"
+  when: openwrt_captive_portal | bool
+
+- name: Rimuovi 99-br-cp (Captive Portal disabilitato)
+  ansible.builtin.file:
+    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-br-cp"
+    state: absent
+  when: not openwrt_captive_portal | bool
+
+- name: Scrivi uci-default 99-zerotier (ZeroTier / DualVPN)
+  ansible.builtin.template:
+    src: 99-zerotier.j2
+    dest: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-zerotier"
+    mode: "0755"
+  when: openwrt_vpn in ['ZeroTier', 'DualVPN']
+
+- name: Rimuovi 99-zerotier (VPN diversa)
+  ansible.builtin.file:
+    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-zerotier"
+    state: absent
+  when: openwrt_vpn not in ['ZeroTier', 'DualVPN']
+
+- name: Copia overlay root_files in openwrt/files/
+  ansible.builtin.copy:
+    src: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/"
+    dest: "{{ openwrt_src_dir }}/files/"
+    remote_src: true
+    mode: preserve

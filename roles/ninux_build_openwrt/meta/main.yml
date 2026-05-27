@@ -1,0 +1,24 @@
+---
+galaxy_info:
+  role_name: ninux_build_openwrt
+  author: mikysal78
+  description: Build OpenWrt firmware for Ninux community mesh nodes
+  license: GPL-3.0
+  min_ansible_version: "2.12"
+  platforms:
+    - name: Debian
+      versions:
+        - bookworm
+        - bullseye
+    - name: Ubuntu
+      versions:
+        - jammy
+        - focal
+  galaxy_tags:
+    - openwrt
+    - firmware
+    - networking
+    - ninux
+    - mesh
+
+dependencies: []

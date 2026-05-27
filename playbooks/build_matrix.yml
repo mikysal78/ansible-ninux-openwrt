@@ -1,0 +1,46 @@
+---
+# playbooks/build_matrix.yml
+#
+# Build multiple firmware images sequentially on a single build host.
+# Define the matrix in inventory group_vars or pass it via -e.
+#
+# Example matrix (group_vars/build_hosts.yml):
+#
+#   openwrt_build_matrix:
+#     - org: basilicata
+#       target: glinet_gl-mt300n-v2
+#       captive_portal: true
+#       vpn: ZeroTier
+#     - org: basilicata
+#       target: x86_64
+#       captive_portal: false
+#       vpn: WireGuard
+#     - org: roma
+#       target: zyxel_nwa50ax-pro
+#       captive_portal: false
+#       vpn: NO
+
+- name: Build Ninux OpenWrt firmware matrix
+  hosts: build_hosts
+  gather_facts: true
+  serial: 1   # one target at a time per host
+
+  tasks:
+    - name: Validate matrix is defined
+      ansible.builtin.assert:
+        that:
+          - openwrt_build_matrix is defined
+          - openwrt_build_matrix | length > 0
+        fail_msg: "Define openwrt_build_matrix in group_vars/build_hosts.yml"
+
+    - name: Build each firmware in the matrix
+      ansible.builtin.include_role:
+        name: ninux_build_openwrt
+      vars:
+        openwrt_org: "{{ item.org }}"
+        openwrt_target: "{{ item.target }}"
+        openwrt_captive_portal: "{{ item.captive_portal | default(false) }}"
+        openwrt_vpn: "{{ item.vpn | default('NO') }}"
+      loop: "{{ openwrt_build_matrix }}"
+      loop_control:
+        label: "{{ item.org }}/{{ item.target }} CP={{ item.captive_portal | default(false) }} VPN={{ item.vpn | default('NO') }}"

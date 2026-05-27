@@ -1,0 +1,126 @@
+---
+# tasks/artifacts.yml - Copia firmware in output/ e su NFS
+
+- name: Calcola percorsi artefatti
+  ansible.builtin.set_fact:
+    _artifact_local: >-
+      {{
+        openwrt_output_dir + '/' + openwrt_version + '/' + openwrt_org + '/' +
+        ('CaptivePortal' if openwrt_captive_portal | bool else 'Standard') +
+        '/VPN-' + openwrt_vpn + '/' + openwrt_target
+      }}
+    _artifact_nfs: >-
+      {{
+        openwrt_nfs_dir + '/' + openwrt_version + '/' + openwrt_org + '/' +
+        ('CaptivePortal' if openwrt_captive_portal | bool else 'Standard') +
+        '/VPN-' + openwrt_vpn + '/' + openwrt_target
+      }}
+
+- name: Debug percorsi
+  ansible.builtin.debug:
+    msg:
+      - "output_dir  : {{ openwrt_output_dir }}"
+      - "local dest  : {{ _artifact_local }}"
+      - "nfs dest    : {{ _artifact_nfs }}"
+      - "src bin/    : {{ openwrt_src_dir }}/bin/targets"
+
+- name: Crea directory destinazione locale
+  ansible.builtin.file:
+    path: "{{ _artifact_local }}"
+    state: directory
+    mode: "0755"
+
+- name: Crea directory destinazione NFS
+  ansible.builtin.file:
+    path: "{{ _artifact_nfs }}"
+    state: directory
+    mode: "0755"
+  # NFS: ignora errori di permessi (gestiti lato server)
+  failed_when: false
+
+- name: Verifica presenza file firmware in bin/targets
+  ansible.builtin.find:
+    paths: "{{ openwrt_src_dir }}/bin/targets"
+    patterns:
+      - "*-sysupgrade.bin"
+      - "*-factory.bin"
+      - "*.img.gz"
+      - "*.img"
+    recurse: true
+    file_type: file
+  register: _firmware_found
+
+- name: Fallisci se nessun firmware trovato
+  ansible.builtin.fail:
+    msg: >
+      Nessun firmware trovato in {{ openwrt_src_dir }}/bin/targets
+      La build potrebbe essere fallita silenziosamente.
+  when: _firmware_found.files | length == 0
+
+- name: "Firmware trovati: {{ _firmware_found.files | length }} file"
+  ansible.builtin.debug:
+    msg: "{{ _firmware_found.files | map(attribute='path') | map('basename') | list }}"
+
+- name: Copia firmware in output/ (locale)
+  ansible.builtin.shell: |
+    set -e
+    find {{ openwrt_src_dir }}/bin/targets -type f \( \
+      -name "*-sysupgrade.bin"  \
+      -o -name "*-factory.bin"  \
+      -o -name "*.img.gz"       \
+      -o -name "*.img"          \
+      -o -name "sha256sums"     \
+      -o -name "config.buildinfo"  \
+      -o -name "feeds.buildinfo"   \
+      -o -name "version.buildinfo" \
+    \) \
+    ! -path "*/packages/*"          \
+    ! -path "*/kmods/*"             \
+    ! -path "*/supplementary-files/*" \
+    -exec cp -v {} {{ _artifact_local }}/ \;
+  register: _copy_local
+  changed_when: true
+
+- name: Copia firmware su NFS
+  ansible.builtin.shell: |
+    find {{ openwrt_src_dir }}/bin/targets -type f \( \
+      -name "*-sysupgrade.bin"  \
+      -o -name "*-factory.bin"  \
+      -o -name "*.img.gz"       \
+      -o -name "*.img"          \
+      -o -name "sha256sums"     \
+      -o -name "config.buildinfo"  \
+      -o -name "feeds.buildinfo"   \
+      -o -name "version.buildinfo" \
+    \) \
+    ! -path "*/packages/*"          \
+    ! -path "*/kmods/*"             \
+    ! -path "*/supplementary-files/*" \
+    -exec cp -v {} {{ _artifact_nfs }}/ \;
+  changed_when: true
+  # NFS potrebbe non essere montato - non blocca la build
+  failed_when: false
+
+- name: Pulisci bin/ dopo la copia
+  ansible.builtin.file:
+    path: "{{ openwrt_src_dir }}/bin"
+    state: "{{ item }}"
+  loop: [absent, directory]
+
+- name: Verifica file copiati in output/
+  ansible.builtin.find:
+    paths: "{{ _artifact_local }}"
+    file_type: file
+  register: _copied_files
+
+- name: Riepilogo
+  ansible.builtin.debug:
+    msg:
+      - "Locale : {{ _artifact_local }} ({{ _copied_files.files | length }} file)"
+      - "NFS    : {{ _artifact_nfs }}"
+      - "File   : {{ _copied_files.files | map(attribute='path') | map('basename') | list }}"
+
+# Upload OpenWISP (opzionale)
+- name: Upload firmware su OpenWISP Firmware Upgrader
+  ansible.builtin.include_tasks: openwisp_upload.yml
+  when: openwisp_upload_enabled | bool

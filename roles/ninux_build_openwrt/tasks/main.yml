@@ -1,0 +1,43 @@
+---
+# ============================================================
+# ninux_build_openwrt - tasks/main.yml
+# ============================================================
+
+- name: Install build dependencies
+  ansible.builtin.include_tasks: deps.yml
+  tags: [deps]
+
+- name: Prepare build user and directories
+  ansible.builtin.include_tasks: prepare.yml
+  tags: [prepare]
+
+- name: Clone / update ninux-build-openwrt repo
+  ansible.builtin.include_tasks: clone_ninux.yml
+  tags: [clone]
+
+- name: Clone / update OpenWrt upstream source
+  ansible.builtin.include_tasks: clone_openwrt.yml
+  tags: [clone, openwrt]
+
+- name: Configure root_files overlay
+  ansible.builtin.include_tasks: rootfiles.yml
+  tags: [rootfiles, config]
+
+- name: Configure feeds
+  ansible.builtin.include_tasks: feeds.yml
+  tags: [feeds, config]
+
+- name: Configure .config for target
+  ansible.builtin.include_tasks: dotconfig.yml
+  tags: [dotconfig, config]
+
+- name: Build firmware
+  ansible.builtin.include_tasks: build.yml
+  tags: [build]
+
+- name: Collect artifacts
+  ansible.builtin.include_tasks: artifacts.yml
+  tags: [artifacts]
+
+# Nota: l'upload OpenWISP è incluso direttamente da artifacts.yml
+# quando openwisp_upload_enabled: true

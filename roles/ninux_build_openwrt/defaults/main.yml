@@ -1,0 +1,90 @@
+---
+# ============================================================
+# ninux_build_openwrt - defaults/main.yml
+#
+# NOTA: openwrt_work_dir NON e' definito qui - deve essere
+# passato dal playbook chiamante (o da config/build.yml).
+# Questo evita ambiguita' su playbook_dir dentro i ruoli.
+# ============================================================
+
+openwrt_version: "v25.12.4"
+openwrt_target: "glinet_gl-mt300n-v2"
+openwrt_org: "basilicata"
+openwrt_captive_portal: false
+openwrt_vpn: "NO"
+openwrt_build_user: "{{ ansible_user_id }}"
+
+# Questi path dipendono da openwrt_work_dir che viene dal playbook
+openwrt_build_basedir: "{{ openwrt_work_dir }}/build"
+openwrt_output_dir: "{{ openwrt_work_dir }}/output"
+openwrt_nfs_dir: "/mnt/nfs-firmware"
+openwrt_config_local_path: "{{ openwrt_work_dir }}/config"
+openwrt_ninux_src_dir: "{{ openwrt_work_dir }}/build/ninux-configs"
+openwrt_src_dir: "{{ openwrt_work_dir }}/build/openwrt"
+
+openwrt_ccache_enabled: true
+openwrt_ccache_dir: "/var/cache/openwrt-ccache"
+openwrt_ccache_maxsize: "20G"
+
+openwrt_tmpfs_enabled: true
+openwrt_tmpfs_size: "8G"
+openwrt_tmpfs_path: "/mnt/openwrt-tmpfs"
+
+openwrt_make_jobs: 0
+openwrt_make_jobs_extra: 2
+
+openwrt_upstream_repo: "https://github.com/openwrt/openwrt.git"
+
+openwrt_feeds:
+  - "src-git chilli https://github.com/mikysal78/coova-chilli-openwrt.git"
+  - "src-git openwisp_config https://github.com/openwisp/openwisp-config.git"
+  - "src-git openwisp_monitoring https://github.com/openwisp/openwrt-openwisp-monitoring.git"
+  - "src-git zerotier https://github.com/mwarning/zerotier-openwrt.git"
+
+openwrt_remove_packages:
+  - "package/feeds/luci/luci-app-apinger"
+
+openwrt_cleanup_after_build: true
+openwrt_cleanup_sources: false
+
+openwrt_clean_build_targets:
+  - "lamobo_R1"
+  - "tplink_c2600"
+
+openwrt_build_deps:
+  - build-essential
+  - ccache
+  - time
+  - git
+  - subversion
+  - g++
+  - bash
+  - make
+  - libssl-dev
+  - patch
+  - libncurses-dev
+  - zlib1g-dev
+  - gawk
+  - flex
+  - gettext
+  - wget
+  - unzip
+  - xz-utils
+  - python3
+  - python3-distutils-extra
+  - rsync
+  - curl
+  - libsnmp-dev
+  - liblzma-dev
+  - libpam0g-dev
+  - cpio
+
+openwisp_upload_enabled: false
+openwisp_url: ""
+openwisp_username: ""
+openwisp_password: ""
+openwisp_org_slug: "{{ openwrt_org }}"
+openwisp_org_id: ""
+openwisp_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"
+openwisp_trigger_upgrade: false
+openwisp_upgrade_group: ""

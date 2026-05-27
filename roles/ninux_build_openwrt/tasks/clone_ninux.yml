@@ -1,0 +1,9 @@
+---
+# tasks/clone_ninux.yml
+# Copia config/ dal repo nella directory di build.
+
+- name: Sincronizza config/ nella directory di build
+  ansible.builtin.copy:
+    src: "{{ openwrt_config_local_path }}/"
+    dest: "{{ openwrt_ninux_src_dir }}/"
+    mode: preserve

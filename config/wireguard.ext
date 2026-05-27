@@ -1,0 +1,7 @@
+# Estensione WireGuard VPN
+CONFIG_PACKAGE_kmod-wireguard=y
+CONFIG_PACKAGE_luci-proto-wireguard=y
+CONFIG_PACKAGE_wireguard-tools=y
+CONFIG_PACKAGE_kmod-vxlan=y
+CONFIG_PACKAGE_luci-proto-vxlan=y
+CONFIG_PACKAGE_vxlan=y

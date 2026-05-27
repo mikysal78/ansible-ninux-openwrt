@@ -1,0 +1,14 @@
+---
+# tasks/deps.yml - Dipendenze di build (richiede sudo)
+
+- name: Aggiorna cache apt
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  become: true
+
+- name: Installa dipendenze build OpenWrt
+  ansible.builtin.apt:
+    name: "{{ openwrt_build_deps }}"
+    state: present
+  become: true

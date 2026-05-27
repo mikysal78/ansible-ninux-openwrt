@@ -1,0 +1,83 @@
+---
+# playbooks/cleanup.yml
+#
+# Pulizia manuale della working directory di build.
+# Utile dopo una serie di build o prima di liberare spazio sul builder.
+#
+# Usage:
+#   # Pulisce solo i temporanei (mantiene sorgenti OpenWrt e ccache)
+#   ansible-playbook playbooks/cleanup.yml
+#
+#   # Pulisce tutto inclusi sorgenti e ccache (build successiva riparte da zero)
+#   ansible-playbook playbooks/cleanup.yml -e cleanup_full=true
+#
+#   # Pulisce solo output/ (firmware già archiviati da Jenkins)
+#   ansible-playbook playbooks/cleanup.yml -e cleanup_output=true
+
+- name: Pulizia directory di build
+  hosts: build_hosts
+  gather_facts: false
+
+  vars:
+    cleanup_full: false       # rimuove anche sorgenti OpenWrt e ccache
+    cleanup_output: false     # rimuove firmware in output/
+
+  tasks:
+    - name: Mostra spazio occupato prima della pulizia
+      ansible.builtin.shell: |
+        echo "=== Spazio build/ ==="
+        du -sh {{ openwrt_work_dir }}/build/* 2>/dev/null || echo "  (vuoto)"
+        echo "=== Spazio .ccache/ ==="
+        du -sh {{ openwrt_work_dir }}/.ccache 2>/dev/null || echo "  (vuoto)"
+        echo "=== Spazio output/ ==="
+        du -sh {{ openwrt_work_dir }}/output 2>/dev/null || echo "  (vuoto)"
+        echo "=== Totale ==="
+        du -sh {{ openwrt_work_dir }}/build {{ openwrt_work_dir }}/.ccache {{ openwrt_work_dir }}/output 2>/dev/null | tail -1
+      register: _before
+      changed_when: false
+
+    - name: Spazio prima
+      ansible.builtin.debug:
+        msg: "{{ _before.stdout_lines }}"
+
+    # ---- temporanei (sempre) -------------------------------------
+    - name: Rimuovi temporanei build (tmp/ staging_dir/ build_dir/)
+      ansible.builtin.shell: |
+        rm -rf {{ openwrt_work_dir }}/build/openwrt/tmp
+        rm -rf {{ openwrt_work_dir }}/build/openwrt/staging_dir
+        rm -rf {{ openwrt_work_dir }}/build/openwrt/build_dir
+        rm -rf {{ openwrt_work_dir }}/build/openwrt/bin
+      args:
+        executable: /bin/bash
+      changed_when: true
+
+    # ---- sorgenti OpenWrt (solo se cleanup_full) -----------------
+    - name: Rimuovi sorgenti OpenWrt (cleanup_full)
+      ansible.builtin.file:
+        path: "{{ openwrt_work_dir }}/build/openwrt"
+        state: absent
+      when: cleanup_full | bool
+
+    # ---- ccache (solo se cleanup_full) ---------------------------
+    - name: Rimuovi ccache (cleanup_full)
+      ansible.builtin.file:
+        path: "{{ openwrt_work_dir }}/.ccache"
+        state: absent
+      when: cleanup_full | bool
+
+    # ---- output firmware (solo se cleanup_output) ---------------
+    - name: Rimuovi output firmware (cleanup_output)
+      ansible.builtin.file:
+        path: "{{ openwrt_work_dir }}/output"
+        state: absent
+      when: cleanup_output | bool
+
+    - name: Mostra spazio liberato
+      ansible.builtin.shell: |
+        df -h {{ openwrt_work_dir }} | tail -1
+      register: _after
+      changed_when: false
+
+    - name: Spazio disco disponibile dopo pulizia
+      ansible.builtin.debug:
+        msg: "{{ _after.stdout }}"

@@ -1,0 +1,25 @@
+---
+# playbooks/_build_device_variants.yml
+# Incluso da build_all.yml - compila tutte le varianti di UN device in sequenza.
+
+- name: "Compila variante firmware"
+  ansible.builtin.include_role:
+    name: ninux_build_openwrt
+  vars:
+    openwrt_target: "{{ target_item }}"
+    openwrt_vpn: "{{ variant_item.vpn }}"
+    openwrt_captive_portal: "{{ variant_item.cp }}"
+    openwrt_cleanup_after_build: false
+  loop: "{{ _variant_matrix }}"
+  loop_control:
+    loop_var: variant_item
+    label: "{{ target_item }} VPN={{ variant_item.vpn }} CP={{ variant_item.cp }}"
+
+- name: "[ {{ target_item }} ] Pulizia post-device"
+  ansible.builtin.shell: |
+    rm -rf {{ openwrt_work_dir }}/build/openwrt/staging_dir
+    rm -rf {{ openwrt_work_dir }}/build/openwrt/build_dir
+    rm -rf {{ openwrt_work_dir }}/build/openwrt/bin
+  args:
+    executable: /bin/bash
+  changed_when: true

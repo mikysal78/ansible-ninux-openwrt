@@ -1,0 +1,185 @@
+---
+# =============================================================================
+# config/build.yml  —  Configurazione centralizzata del sistema di build
+#
+# Questo è IL file da modificare per personalizzare il comportamento
+# del sistema. Tutte le variabili definite qui sovrascrivono i defaults
+# del ruolo (roles/ninux_build_openwrt/defaults/main.yml).
+#
+# Viene letto automaticamente da tutti i playbook tramite group_vars.
+# Per i segreti (password OpenWISP) usa inventory/vault.yml (cifrato).
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# OPENWRT - Versione e organizzazione
+# -----------------------------------------------------------------------------
+
+# Tag OpenWrt da compilare (es. v25.12.4, v24.10.0)
+openwrt_version: "v25.12.4"
+
+# Organizzazione Ninux - corrisponde a config/organizations/<org>/
+openwrt_org: "basilicata"
+
+# Varianti VPN da compilare per ogni device
+# Possibili valori: NO, ZeroTier, WireGuard, DualVPN
+openwrt_vpn_variants:
+  - "NO"
+  - "ZeroTier"
+  - "WireGuard"
+  - "DualVPN"
+
+# Compila anche le varianti con Captive Portal (raddoppia le build)
+openwrt_cp_variants: true
+
+# -----------------------------------------------------------------------------
+# PERCORSI
+# -----------------------------------------------------------------------------
+
+# Tutto relativo alla workdir del repo (funziona con Jenkins e build locali)
+openwrt_work_dir: "{{ playbook_dir }}/.."
+
+# Directory di build (sorgenti OpenWrt, feeds, oggetti compilati)
+openwrt_build_basedir: "{{ openwrt_work_dir }}/build"
+
+# Directory output firmware (file finali .bin, sha256sums, ecc.)
+openwrt_output_dir: "{{ openwrt_work_dir }}/output"
+
+# Mount NFS dove copiare i firmware completi (bin/targets/ intero)
+openwrt_nfs_dir: "/mnt/nfs-firmware"
+
+# Directory config locale (dentro il repo - non modificare)
+openwrt_config_local_path: "{{ openwrt_work_dir }}/config"
+openwrt_ninux_src_dir: "{{ openwrt_build_basedir }}/ninux-configs"
+openwrt_src_dir: "{{ openwrt_build_basedir }}/openwrt"
+
+# -----------------------------------------------------------------------------
+# PERFORMANCE - Compilazione
+# -----------------------------------------------------------------------------
+
+# Repository upstream OpenWrt
+openwrt_upstream_repo: "https://github.com/openwrt/openwrt.git"
+
+# Numero di job make paralleli
+# 0 = automatico (nproc + extra), consigliato
+# Es. con 12 CPU -> 12 + 2 = 14 job
+openwrt_make_jobs: 0
+openwrt_make_jobs_extra: 2
+
+# -----------------------------------------------------------------------------
+# PERFORMANCE - ccache
+# -----------------------------------------------------------------------------
+
+# Abilita ccache (riduce del 70% il tempo dalla seconda build)
+openwrt_ccache_enabled: true
+
+# Percorso ccache FUORI dal workspace Jenkins:
+# - sopravvive tra i job (riuso della cache)
+# - su Proxmox LXC: usa una directory su storage persistente
+openwrt_ccache_dir: "/var/cache/openwrt-ccache"
+
+# Dimensione massima ccache (con 6 device e 4 varianti VPN: ~15-20GB)
+openwrt_ccache_maxsize: "20G"
+
+# -----------------------------------------------------------------------------
+# PERFORMANCE - tmpfs (RAM disk per directory temporanee build)
+# -----------------------------------------------------------------------------
+
+# Monta tmp/ su RAM disk: risparmia ~30-40% del tempo di build su I/O
+# Il container ha 24GB RAM, 8G per tmpfs è sicuro
+openwrt_tmpfs_enabled: true
+openwrt_tmpfs_size: "8G"
+openwrt_tmpfs_path: "/mnt/openwrt-tmpfs"
+
+# -----------------------------------------------------------------------------
+# PULIZIA
+# -----------------------------------------------------------------------------
+
+# Rimuovi staging_dir/build_dir dopo ogni device (risparmio disco ~5-10GB)
+# Vengono ricostruiti da ccache in ~2 minuti alla build successiva
+openwrt_cleanup_after_build: true
+
+# Rimuovi i sorgenti OpenWrt al termine di tutte le build
+# false = più veloce alla build successiva (riscarca solo i delta)
+# true  = libera ~500MB ma la prossima build deve riscaricare tutto
+openwrt_cleanup_sources: false
+
+# -----------------------------------------------------------------------------
+# TARGET con clean build forzato (bug noti OpenWrt)
+# -----------------------------------------------------------------------------
+
+openwrt_clean_build_targets:
+  - "lamobo_R1"
+  - "tplink_c2600"
+
+# -----------------------------------------------------------------------------
+# FEEDS aggiuntivi
+# -----------------------------------------------------------------------------
+
+openwrt_feeds:
+  - "src-git chilli https://github.com/mikysal78/coova-chilli-openwrt.git"
+  - "src-git openwisp_config https://github.com/openwisp/openwisp-config.git"
+  - "src-git openwisp_monitoring https://github.com/openwisp/openwrt-openwisp-monitoring.git"
+  - "src-git zerotier https://github.com/mwarning/zerotier-openwrt.git"
+
+# Pacchetti da rimuovere dopo l'installazione dei feed (bug noti)
+openwrt_remove_packages:
+  - "package/feeds/luci/luci-app-apinger"
+
+# -----------------------------------------------------------------------------
+# OPENWISP Firmware Upgrader
+# -----------------------------------------------------------------------------
+
+# Abilita upload automatico su OpenWISP dopo la build
+# Le credenziali vanno in inventory/vault.yml (cifrato con ansible-vault)
+openwisp_upload_enabled: false
+
+# URL base dell'istanza OpenWISP (es. https://openwisp.example.org)
+openwisp_url: ""
+
+# Slug e UUID dell'organizzazione OpenWISP
+# Lo slug di solito coincide con openwrt_org
+openwisp_org_slug: "{{ openwrt_org }}"
+openwisp_org_id: ""
+
+# Nome della category firmware in OpenWISP (creata se non esiste)
+openwisp_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"
+
+# Avvia batch upgrade su tutti i device dopo l'upload
+openwisp_trigger_upgrade: false
+
+# Limita upgrade a un device group specifico (UUID OpenWISP)
+# Lascia vuoto per aggiornare tutti i device dell'org
+openwisp_upgrade_group: ""
+
+# -----------------------------------------------------------------------------
+# DIPENDENZE DI BUILD (apt)
+# Modificare solo se si usa una distribuzione non standard
+# -----------------------------------------------------------------------------
+
+openwrt_build_deps:
+  - build-essential
+  - ccache
+  - time
+  - git
+  - subversion
+  - g++
+  - bash
+  - make
+  - libssl-dev
+  - patch
+  - libncurses-dev
+  - zlib1g-dev
+  - gawk
+  - flex
+  - gettext
+  - wget
+  - unzip
+  - xz-utils
+  - python3
+  - python3-distutils-extra
+  - rsync
+  - curl
+  - libsnmp-dev
+  - liblzma-dev
+  - libpam0g-dev
+  - cpio

@@ -1,0 +1,85 @@
+---
+# tasks/prepare.yml - Directory di build, ccache, tmpfs
+
+- name: Crea directory di build
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - "{{ openwrt_build_basedir }}"
+    - "{{ openwrt_ninux_src_dir }}"
+    - "{{ openwrt_output_dir }}"
+
+# ---- ccache persistente ------------------------------------------
+- name: Crea directory ccache persistente
+  ansible.builtin.file:
+    path: "{{ openwrt_ccache_dir }}"
+    state: directory
+    mode: "0777"
+  become: true
+  when: openwrt_ccache_enabled | bool
+
+- name: Configura ccache limits
+  ansible.builtin.command:
+    cmd: "ccache --set-config=max_size={{ openwrt_ccache_maxsize }}"
+  environment:
+    CCACHE_DIR: "{{ openwrt_ccache_dir }}"
+  when: openwrt_ccache_enabled | bool
+  changed_when: false
+
+- name: Statistiche ccache
+  ansible.builtin.command:
+    cmd: ccache --show-stats --verbose
+  environment:
+    CCACHE_DIR: "{{ openwrt_ccache_dir }}"
+  register: _ccache_stats
+  when: openwrt_ccache_enabled | bool
+  changed_when: false
+
+- name: ccache stats
+  ansible.builtin.debug:
+    msg: "{{ _ccache_stats.stdout_lines }}"
+  when: openwrt_ccache_enabled | bool
+
+# ---- tmpfs -------------------------------------------------------
+- name: Controlla se tmpfs e' gia' montato
+  ansible.builtin.command:
+    cmd: "mountpoint -q {{ openwrt_tmpfs_path }}"
+  register: _tmpfs_mounted
+  failed_when: false
+  changed_when: false
+  when: openwrt_tmpfs_enabled | bool
+
+- name: Crea mount point tmpfs
+  ansible.builtin.file:
+    path: "{{ openwrt_tmpfs_path }}"
+    state: directory
+    mode: "0777"
+  become: true
+  when: openwrt_tmpfs_enabled | bool
+
+- name: Monta tmpfs
+  ansible.builtin.command:
+    cmd: "mount -t tmpfs -o size={{ openwrt_tmpfs_size }},mode=0777 tmpfs {{ openwrt_tmpfs_path }}"
+  become: true
+  when:
+    - openwrt_tmpfs_enabled | bool
+    - _tmpfs_mounted.rc != 0
+  changed_when: true
+
+# Il symlink openwrt/tmp -> tmpfs viene creato in build.yml
+# DOPO che il clone OpenWrt ha creato la directory build/openwrt/
+
+# ---- ccache facts ------------------------------------------------
+- name: Set ccache facts per clean-build targets
+  ansible.builtin.set_fact:
+    _openwrt_use_ccache: false
+    _openwrt_clean_build: true
+  when: openwrt_target in openwrt_clean_build_targets
+
+- name: Set ccache facts per target normali
+  ansible.builtin.set_fact:
+    _openwrt_use_ccache: "{{ openwrt_ccache_enabled }}"
+    _openwrt_clean_build: false
+  when: openwrt_target not in openwrt_clean_build_targets

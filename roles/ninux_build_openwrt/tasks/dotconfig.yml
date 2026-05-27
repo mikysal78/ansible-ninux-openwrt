@@ -1,0 +1,50 @@
+---
+# tasks/dotconfig.yml - Assembla .config per target + estensioni
+
+- name: Rimuovi .config esistenti
+  ansible.builtin.shell: rm -rf {{ openwrt_src_dir }}/.config*
+  changed_when: true
+
+- name: Verifica esistenza config per il target
+  ansible.builtin.stat:
+    path: "{{ openwrt_ninux_src_dir }}/organizations/{{ openwrt_org }}/{{ openwrt_target }}.config"
+  register: _target_config
+
+- name: Fallisci se il config del target non esiste
+  ansible.builtin.fail:
+    msg: >
+      Config non trovato: config/organizations/{{ openwrt_org }}/{{ openwrt_target }}.config
+      Aggiungi il file nel repo oppure verifica openwrt_org e openwrt_target.
+  when: not _target_config.stat.exists
+
+- name: Copia config base del target
+  ansible.builtin.copy:
+    src: "{{ openwrt_ninux_src_dir }}/organizations/{{ openwrt_org }}/{{ openwrt_target }}.config"
+    dest: "{{ openwrt_src_dir }}/.config"
+    remote_src: true
+    mode: "0644"
+
+- name: Appendi estensione Captive Portal
+  ansible.builtin.shell: cat {{ openwrt_ninux_src_dir }}/chilli.ext >> {{ openwrt_src_dir }}/.config
+  when: openwrt_captive_portal | bool
+  changed_when: true
+
+- name: Appendi estensione ZeroTier
+  ansible.builtin.shell: cat {{ openwrt_ninux_src_dir }}/zerotier.ext >> {{ openwrt_src_dir }}/.config
+  when: openwrt_vpn in ['ZeroTier', 'DualVPN']
+  changed_when: true
+
+- name: Appendi estensione WireGuard
+  ansible.builtin.shell: cat {{ openwrt_ninux_src_dir }}/wireguard.ext >> {{ openwrt_src_dir }}/.config
+  when: openwrt_vpn in ['WireGuard', 'DualVPN']
+  changed_when: true
+
+- name: Appendi config base comune
+  ansible.builtin.shell: cat {{ openwrt_ninux_src_dir }}/base.config >> {{ openwrt_src_dir }}/.config
+  changed_when: true
+
+- name: Normalizza .config con make defconfig
+  ansible.builtin.command:
+    cmd: make defconfig
+    chdir: "{{ openwrt_src_dir }}"
+  changed_when: true

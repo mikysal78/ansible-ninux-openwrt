@@ -1,0 +1,5 @@
+# Directory create durante la build - non committare
+build/
+output/
+.ccache/
+*.retry

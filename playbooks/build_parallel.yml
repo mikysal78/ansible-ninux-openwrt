@@ -1,0 +1,111 @@
+---
+# playbooks/build_parallel.yml
+#
+# Build parallela per device: lancia N compilazioni simultanee
+# dividendo i core tra i processi make.
+#
+# NOTA: ogni device ha la propria directory build/ separata
+# (build/<target>/) così i processi non si pestano i piedi.
+#
+# Con 12 CPU consigliato: parallel_builds=2, jobs=8 per build
+# Con 12 CPU massimo:     parallel_builds=3, jobs=6 per build
+#
+# Usage:
+#   ansible-playbook playbooks/build_parallel.yml \
+#     -e openwrt_org=basilicata \
+#     -e parallel_builds=2
+
+- name: Build parallela per device
+  hosts: build_hosts
+  gather_facts: true
+
+  vars:
+    openwrt_work_dir: "{{ playbook_dir }}/.."
+    openwrt_vpn_variants:
+      - "NO"
+      - "ZeroTier"
+      - "WireGuard"
+      - "DualVPN"
+    openwrt_cp_variants: false
+    parallel_builds: 2   # device in parallelo
+
+  pre_tasks:
+    - name: Valida variabile org
+      ansible.builtin.assert:
+        that:
+          - openwrt_org is defined and openwrt_org | length > 0
+        fail_msg: "Definisci openwrt_org"
+
+    - name: Scopri device disponibili
+      ansible.builtin.find:
+        paths: "{{ openwrt_work_dir }}/config/organizations/{{ openwrt_org }}"
+        patterns: "*.config"
+        file_type: file
+      register: _discovered_configs
+
+    - name: Estrai lista device
+      ansible.builtin.set_fact:
+        _discovered_targets: >-
+          {{ _discovered_configs.files
+             | map(attribute='path')
+             | map('basename')
+             | map('regex_replace', '\.config$', '')
+             | sort | list }}
+
+    - name: Calcola jobs per build
+      ansible.builtin.set_fact:
+        _jobs_per_build: >-
+          {{ (ansible_processor_nproc | int // parallel_builds | int) + 2 }}
+
+    - name: Piano
+      ansible.builtin.debug:
+        msg:
+          - "Device: {{ _discovered_targets | join(', ') }}"
+          - "Build parallele: {{ parallel_builds }}"
+          - "Jobs per build: {{ _jobs_per_build }}"
+
+  tasks:
+    # Fase 1: per ogni device, compila tutte le varianti VPN/CP in sequenza
+    # I device vengono lanciati in parallelo (async) a gruppi di parallel_builds
+    - name: Lancia build per device {{ item }}
+      ansible.builtin.shell: |
+        ansible-playbook {{ playbook_dir }}/build_firmware.yml \
+          -e openwrt_org={{ openwrt_org }} \
+          -e openwrt_target={{ item }} \
+          -e openwrt_version={{ openwrt_version }} \
+          -e openwrt_make_jobs={{ _jobs_per_build }} \
+          -e '{"openwrt_vpn_variants": {{ openwrt_vpn_variants | to_json }}}' \
+          {{ '-e openwrt_cp_variants=true' if openwrt_cp_variants | bool else '' }} \
+          --skip-tags deps \
+          2>&1 | tee {{ openwrt_work_dir }}/build/log-{{ item }}.log
+      loop: "{{ _discovered_targets }}"
+      loop_control:
+        label: "{{ item }}"
+      async: 7200
+      poll: 0   # fire and forget, raccogliamo dopo
+      register: _build_jobs
+
+    - name: Attendi completamento build (poll ogni 60s)
+      ansible.builtin.async_status:
+        jid: "{{ item.ansible_job_id }}"
+      loop: "{{ _build_jobs.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+      register: _job_results
+      until: _job_results.finished
+      retries: 120   # max 2 ore per device
+      delay: 60
+
+    - name: Riepilogo build
+      ansible.builtin.debug:
+        msg: >-
+          {{ item.item }}: {{ 'OK' if item.rc == 0 else 'FAILED (rc=' + item.rc | string + ')' }}
+          — log: {{ openwrt_work_dir }}/build/log-{{ item.item }}.log
+      loop: "{{ _job_results.results }}"
+      loop_control:
+        label: "{{ item.item }}"
+
+    - name: Fallisci se qualche build è fallita
+      ansible.builtin.fail:
+        msg: "Build fallita per: {{ _job_results.results | selectattr('rc', 'ne', 0) | map(attribute='item') | list | join(', ') }}"
+      when: _job_results.results | selectattr('rc', 'ne', 0) | list | length > 0
