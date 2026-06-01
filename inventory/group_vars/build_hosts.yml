@@ -1,20 +1,6 @@
 ---
 # inventory/group_vars/build_hosts.yml
 #
-# Carica la configurazione centralizzata da config/build.yml
-# NON modificare questo file - modifica config/build.yml
-
-# Trick per caricare config/build.yml come variabili di gruppo:
-# il file viene incluso tramite vars_files nei playbook.
-# Le variabili definite in config/build.yml sovrascrivono i defaults del ruolo.
-#
-# Nota: group_vars non supporta include_vars nativamente,
-# quindi le variabili chiave sono ridefinite qui per riferimento.
-# Il file autorevole rimane config/build.yml (letto dai playbook con vars_files).
-
-# Matrice build opzionale (usata da build_matrix.yml)
-# openwrt_build_matrix:
-#   - org: basilicata
-#     target: glinet_gl-mt300n-v2
-#     captive_portal: false
-#     vpn: "NO"
+# NON modificare questo file.
+# Tutte le variabili di configurazione sono in ninux.yml (root del repo).
+# I segreti (shared_secret openwisp) sono in inventory/vault.yml (cifrato).

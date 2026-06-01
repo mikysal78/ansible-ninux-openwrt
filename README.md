@@ -77,7 +77,7 @@ ansible-ninux-openwrt/
 └── .gitignore
 ```
 
-**Il file principale da modificare e' `config/build.yml`** — contiene tutte le variabili con commenti esplicativi.
+**Il file principale da modificare e' `ninux.yml`** — contiene tutte le variabili con commenti esplicativi.
 
 ---
 
@@ -89,7 +89,7 @@ git clone https://github.com/ninuxorg/ansible-ninux-openwrt.git
 cd ansible-ninux-openwrt
 
 # 2. Modifica la configurazione
-nano config/build.yml
+nano ninux.yml
 
 # 3. Verifica i device disponibili
 ls config/organizations/basilicata/
@@ -305,7 +305,7 @@ ansible-vault encrypt inventory/vault.yml \
 
 ## Configurazione del build
 
-**Modifica `config/build.yml`** per personalizzare la build.
+**Modifica `ninux.yml`** per personalizzare la build.
 
 Sezioni principali:
 
@@ -333,7 +333,7 @@ openwisp_url: ""
 openwisp_org_id: ""
 ```
 
-Le variabili in `config/build.yml` sovrascrivono i default del ruolo.
+Le variabili in `ninux.yml` sovrascrivono i default del ruolo.
 Override ulteriore a runtime: `-e variabile=valore`.
 
 ---
@@ -459,7 +459,7 @@ pct restart <CTID>
 
 ### Configurazione
 
-In `config/build.yml`:
+In `ninux.yml`:
 
 ```yaml
 openwisp_upload_enabled: true
@@ -519,7 +519,7 @@ output/                              <- file finali per Jenkins artifacts
 
 ### `openwrt_work_dir is undefined`
 
-Assicurati di usare i playbook da `playbooks/` — caricano `config/build.yml`
+Assicurati di usare i playbook da `playbooks/` — caricano `ninux.yml`
 tramite `vars_files`. Non richiamare il ruolo direttamente senza caricare le variabili.
 
 ### `chown failed: Operation not permitted` su NFS
@@ -530,7 +530,7 @@ il server NFS esporti con `no_root_squash` o adatta i permessi lato server.
 ### `libncurses5 not available`
 
 Pacchetto rimosso da Debian 13+. Usa `libncurses-dev` (gia' nel repo).
-Aggiorna `openwrt_build_deps` in `config/build.yml` se hai un'installazione vecchia.
+Aggiorna `openwrt_build_deps` in `ninux.yml` se hai un'installazione vecchia.
 
 ### Jenkins: `git tool does not exist`
 
