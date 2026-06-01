@@ -3,6 +3,3 @@ build/
 output/
 .ccache/
 *.retry
-
-# Vault ansible (non più usato, sostituito da encrypt_string in ninux.yml)
-inventory/vault.yml
