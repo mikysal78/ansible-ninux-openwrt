@@ -5,7 +5,7 @@
 # Risolvi configurazione openwisp-config per questa org
 # -----------------------------------------------------------------------------
 
-- name: Controlla se org è definita in openwisp-orgs.yml
+- name: Controlla se org è definita in ninux.yml
   ansible.builtin.set_fact:
     _openwisp_org_cfg: "{{ openwisp_orgs[openwrt_org] | default(None) }}"
 
@@ -28,10 +28,10 @@
 - name: Avviso se org non configurata per openwisp (build continua senza openwisp-config)
   ansible.builtin.debug:
     msg: >
-      ATTENZIONE: org '{{ openwrt_org }}' non trovata in config/organizations/openwisp-orgs.yml
+      ATTENZIONE: org '{{ openwrt_org }}' non trovata in ninux.yml (sezione openwisp_orgs)
       oppure manca la secret in vault_openwisp_secrets.
       Il firmware sarà compilato SENZA /etc/config/openwisp.
-      Per abilitare, aggiungi l'org in openwisp-orgs.yml e la secret nel vault.
+      Per abilitare, aggiungi l'org in ninux.yml e la secret nel vault.
   when: not _openwisp_enabled | bool
 
 # -----------------------------------------------------------------------------

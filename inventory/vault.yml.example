@@ -10,7 +10,7 @@ openwisp_password: "changeme"
 
 # shared_secret openwisp-config per organizzazione.
 # Deve corrispondere al valore impostato nell'organizzazione su OpenWISP Controller.
-# Aggiungere una entry per ogni org definita in config/organizations/openwisp-orgs.yml.
+# Aggiungere una entry per ogni org definita in ninux.yml (sezione openwisp_orgs).
 vault_openwisp_secrets:
   basilicata: "Secretn1nuxB4s"
   # roma: "SecretRomaXyz"

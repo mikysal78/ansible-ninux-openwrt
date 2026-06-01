@@ -3,7 +3,7 @@
 # ninux_build_openwrt - defaults/main.yml
 #
 # NOTA: openwrt_work_dir NON e' definito qui - deve essere
-# passato dal playbook chiamante (o da config/build.yml).
+# passato dal playbook chiamante (o da ninux.yml).
 # Questo evita ambiguita' su playbook_dir dentro i ruoli.
 # ============================================================
 
@@ -90,5 +90,5 @@ openwisp_trigger_upgrade: false
 openwisp_upgrade_group: ""
 
 # openwisp-config (agente sul firmware)
-# La configurazione per org è in config/organizations/openwisp-orgs.yml
+# La configurazione per org è in ninux.yml (sezione openwisp_orgs)
 # Le secret sono in inventory/vault.yml → vault_openwisp_secrets.<org>

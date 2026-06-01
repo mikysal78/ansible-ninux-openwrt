@@ -4,8 +4,7 @@
   gather_facts: true
 
   vars_files:
-    - "{{ playbook_dir }}/../config/build.yml"
-    - "{{ playbook_dir }}/../config/organizations/openwisp-orgs.yml"
+    - "{{ playbook_dir }}/../ninux.yml"
     - "{{ playbook_dir }}/../inventory/vault.yml"
   # NOTA: vault.yml è cifrato con ansible-vault. Viene decifrato automaticamente
   # con --vault-password-file. Se non esiste (sviluppo locale senza vault),
@@ -16,7 +15,7 @@
       ansible.builtin.assert:
         that:
           - openwrt_org is defined and openwrt_org | length > 0
-        fail_msg: "Definisci openwrt_org in config/build.yml o con -e openwrt_org=xxx"
+        fail_msg: "Definisci openwrt_org in ninux.yml o con -e openwrt_org=xxx"
 
     - name: Scopri device disponibili per org
       ansible.builtin.find:
