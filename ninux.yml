@@ -68,7 +68,7 @@ openwisp_orgs:
 openwisp_upload_enabled: false
 
 # URL base dell'istanza OpenWISP Firmware Upgrader
-openwisp_url: ""
+openwisp_url: "https://controller.nnxx.ninux.org"
 
 # Credenziali API OpenWISP Firmware Upgrader (cifrate con encrypt_string)
 openwisp_username: !vault |
@@ -96,8 +96,13 @@ openwisp_org_slug: "default"
 # ansible-vault encrypt_string --vault-password-file /var/lib/jenkins/.vault_pass \
 #   'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' --name 'openwisp_org_id'
 openwisp_org_id: !vault |
-      $ANSIBLE_VAULT;1.1;AES256
-      # PLACEHOLDER — sostituire con output di encrypt_string
+          $ANSIBLE_VAULT;1.1;AES256
+          37393939383466303637666435386134343861626232356463386364653763396362303066313534
+          3166353337316263646334303230336166306163343033320a333539373732653062343731346135
+          62303139636662643036613065346662313535323938613834383536616235366137623139343266
+          3561363339643034340a393131643434643162316532373465336535396536313265616133643464
+          66383634363833666233353831636234646438313039626230313861633130313939636335663439
+          3337303962303233653361313138373032623736623737376565
 
 # Nome della category firmware in OpenWISP
 openwisp_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"
