@@ -12,6 +12,18 @@
     state: directory
     mode: "0755"
 
+- name: Crea directory etc/config per org (openwisp)
+  ansible.builtin.file:
+    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/config"
+    state: directory
+    mode: "0755"
+
+- name: Genera /etc/config/openwisp da template
+  ansible.builtin.template:
+    src: openwisp-config.j2
+    dest: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/config/openwisp"
+    mode: "0600"
+
 - name: Scrivi uci-default 99-br-cp (Captive Portal abilitato)
   ansible.builtin.template:
     src: 99-br-cp.j2

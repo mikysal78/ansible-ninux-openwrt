@@ -2,5 +2,12 @@
 # inventory/vault.yml - CIFRARE CON: ansible-vault encrypt inventory/vault.yml
 #
 # Credenziali OpenWISP - non committare mai in chiaro
+
+# Credenziali API OpenWISP Firmware Upgrader
 openwisp_username: "admin"
 openwisp_password: "changeme"
+
+# shared_secret openwisp-config: varia per organizzazione.
+# Corrisponde al valore impostato nell'organizzazione su OpenWISP Controller.
+# Esempio per basilicata:
+vault_openwisp_shared_secret: "Secretn1nuxB4s"
