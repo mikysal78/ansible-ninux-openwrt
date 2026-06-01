@@ -44,12 +44,17 @@ openwisp_orgs:
   basilicata:
     controller_url: "https://controller.nnxx.ninux.org"
     management_interface: "owz12345"
+    shared_secret: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          # PLACEHOLDER — sostituire con output di:
+          # ansible-vault encrypt_string --vault-password-file /var/lib/jenkins/.vault_pass \
+          #   'Secretn1nuxB4s' --name 'shared_secret'
   # roma:
   #   controller_url: "https://controller.nnxx.ninux.org"
   #   management_interface: "owzABCDE"
-  # torino:
-  #   controller_url: "https://controller.nnxx.ninux.org"
-  #   management_interface: "owzXYZWW"
+  #   shared_secret: !vault |
+  #         $ANSIBLE_VAULT;1.1;AES256
+  #         <stringa cifrata>
 
 
 # -----------------------------------------------------------------------------
@@ -61,6 +66,18 @@ openwisp_upload_enabled: false
 
 # URL base dell'istanza OpenWISP Firmware Upgrader
 openwisp_url: ""
+
+# Credenziali API OpenWISP Firmware Upgrader (cifrate con encrypt_string)
+openwisp_username: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      # PLACEHOLDER — sostituire con output di:
+      # ansible-vault encrypt_string --vault-password-file /var/lib/jenkins/.vault_pass \
+      #   'admin' --name 'openwisp_username'
+openwisp_password: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      # PLACEHOLDER — sostituire con output di:
+      # ansible-vault encrypt_string --vault-password-file /var/lib/jenkins/.vault_pass \
+      #   'changeme' --name 'openwisp_password'
 
 # Slug e UUID dell'organizzazione OpenWISP
 openwisp_org_slug: "{{ openwrt_org }}"

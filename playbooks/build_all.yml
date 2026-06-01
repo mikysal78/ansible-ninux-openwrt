@@ -5,10 +5,9 @@
 
   vars_files:
     - "{{ playbook_dir }}/../ninux.yml"
-    - "{{ playbook_dir }}/../inventory/vault.yml"
-  # NOTA: vault.yml è cifrato con ansible-vault. Viene decifrato automaticamente
-  # con --vault-password-file. Se non esiste (sviluppo locale senza vault),
-  # la build salta la generazione di /etc/config/openwisp per le org non configurate.
+  # Le stringhe sensibili (shared_secret, username, password) sono cifrate
+  # inline in ninux.yml con ansible-vault encrypt_string.
+  # Usare --vault-password-file /var/lib/jenkins/.vault_pass per decifrarle.
 
   pre_tasks:
     - name: Valida variabile org

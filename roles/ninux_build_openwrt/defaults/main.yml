@@ -91,4 +91,4 @@ openwisp_upgrade_group: ""
 
 # openwisp-config (agente sul firmware)
 # La configurazione per org è in ninux.yml (sezione openwisp_orgs)
-# Le secret sono in inventory/vault.yml → vault_openwisp_secrets.<org>
+# Le secret sono in ninux.yml (encrypt_string inline)

@@ -5,7 +5,6 @@
 
   vars_files:
     - "{{ playbook_dir }}/../ninux.yml"
-    - "{{ playbook_dir }}/../inventory/vault.yml"
 
   # openwrt_work_dir puo' essere passato via -e (da _build_device_variants.yml)
   # oppure viene da ninux.yml (playbook_dir/.. = root repo).
