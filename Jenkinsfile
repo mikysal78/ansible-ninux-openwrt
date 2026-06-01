@@ -60,13 +60,19 @@ pipeline {
         string(
             name: 'OPENWISP_URL',
             defaultValue: '',
-            description: 'URL OpenWISP (vuoto = da group_vars)'
+            description: 'URL OpenWISP Firmware Upgrader (vuoto = da group_vars)'
+        )
+        string(
+            name: 'OPENWISP_CONTROLLER_URL',
+            defaultValue: 'https://controller.nnxx.ninux.org',
+            description: 'URL controller openwisp-config nel firmware (option url in /etc/config/openwisp)'
         )
     }
 
     environment {
         ANSIBLE_FORCE_COLOR       = 'true'
         ANSIBLE_HOST_KEY_CHECKING = 'false'
+        VAULT_PASS_FILE           = "${JENKINS_HOME}/.vault_pass"
     }
 
     stages {
@@ -111,7 +117,10 @@ Workspace : ${WORKSPACE}
         stage('Install dependencies') {
             when { expression { !params.SKIP_DEPS } }
             steps {
-                sh "ansible-playbook playbooks/build_all.yml -e openwrt_work_dir=${WORKSPACE} -e openwrt_org=${params.OPENWRT_ORG} -e openwrt_version=${params.OPENWRT_VERSION} --tags deps"
+                script {
+                    def vaultArg = fileExists("${WORKSPACE}/inventory/vault.yml") ? "--vault-password-file ${VAULT_PASS_FILE}" : ""
+                    sh "ansible-playbook playbooks/build_all.yml -e openwrt_work_dir=${WORKSPACE} -e openwrt_org=${params.OPENWRT_ORG} -e openwrt_version=${params.OPENWRT_VERSION} --tags deps ${vaultArg}"
+                }
             }
         }
 
@@ -127,6 +136,7 @@ Workspace : ${WORKSPACE}
                         "-e openwrt_tmpfs_size=${params.TMPFS_SIZE}",
                         "-e openwrt_ccache_dir=${params.CCACHE_DIR}",
                         "-e openwrt_ccache_maxsize=${params.CCACHE_SIZE}",
+                        "-e openwisp_controller_url=${params.OPENWISP_CONTROLLER_URL}",
                         "--skip-tags deps"
                     ]
                     if (params.VPN_VARIANTS != 'ALL') {
@@ -141,7 +151,7 @@ Workspace : ${WORKSPACE}
                         if (params.OPENWISP_URL)             args << "-e openwisp_url=${params.OPENWISP_URL}"
                     }
                     if (fileExists("${WORKSPACE}/inventory/vault.yml")) {
-                        args << "--vault-password-file ${JENKINS_HOME}/.vault_pass"
+                        args << "--vault-password-file ${VAULT_PASS_FILE}"
                     }
                     sh args.join(' ')
                 }
