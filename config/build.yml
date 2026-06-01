@@ -153,17 +153,13 @@ openwisp_upgrade_group: ""
 
 # -----------------------------------------------------------------------------
 # OPENWISP-CONFIG (agente sul firmware)
-# Questi parametri configurano /etc/config/openwisp nel firmware compilato.
+# La configurazione per org (controller_url, management_interface) è in:
+#   config/organizations/openwisp-orgs.yml
+# Le shared_secret sono in:
+#   inventory/vault.yml  →  vault_openwisp_secrets.<org>
+# Se un'org non è definita in openwisp-orgs.yml o manca la secret nel vault,
+# la build continua senza generare /etc/config/openwisp.
 # -----------------------------------------------------------------------------
-
-# URL del controller OpenWISP a cui il device si registra
-openwisp_controller_url: "https://controller.nnxx.ninux.org"
-
-# shared_secret per la registrazione automatica del device.
-# VARIA PER ORGANIZZAZIONE: sovrascrivere per ogni org in inventory/vault.yml
-# (cifrato con ansible-vault) oppure come extra-var nella pipeline.
-# Esempio vault: openwisp_shared_secret: "SecretOrg123"
-openwisp_shared_secret: "{{ vault_openwisp_shared_secret | default('CHANGEME') }}"
 
 # -----------------------------------------------------------------------------
 # DIPENDENZE DI BUILD (apt)

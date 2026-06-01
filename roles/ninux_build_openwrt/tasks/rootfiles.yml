@@ -1,16 +1,42 @@
 ---
 # tasks/rootfiles.yml - Prepara overlay root_files nel buildroot OpenWrt
 
-- name: Verifica che openwisp_shared_secret sia definita e non sia il valore di default
-  ansible.builtin.assert:
-    that:
-      - openwisp_shared_secret is defined
-      - openwisp_shared_secret != 'CHANGEME'
-      - openwisp_shared_secret | length > 0
-    fail_msg: >
-      openwisp_shared_secret non è configurata correttamente.
-      Aggiungi 'vault_openwisp_shared_secret: "<secret>"' in inventory/vault.yml
-      (cifrato con ansible-vault), oppure passa -e openwisp_shared_secret=<secret>
+# -----------------------------------------------------------------------------
+# Risolvi configurazione openwisp-config per questa org
+# -----------------------------------------------------------------------------
+
+- name: Controlla se org è definita in openwisp-orgs.yml
+  ansible.builtin.set_fact:
+    _openwisp_org_cfg: "{{ openwisp_orgs[openwrt_org] | default(None) }}"
+
+- name: Controlla se la shared_secret è definita nel vault per questa org
+  ansible.builtin.set_fact:
+    _openwisp_secret: "{{ vault_openwisp_secrets[openwrt_org] | default(None) }}"
+  when: vault_openwisp_secrets is defined
+
+- name: Imposta _openwisp_enabled (true solo se org configurata e secret presente)
+  ansible.builtin.set_fact:
+    _openwisp_enabled: >-
+      {{
+        _openwisp_org_cfg is not none and
+        _openwisp_org_cfg | length > 0 and
+        _openwisp_secret is defined and
+        _openwisp_secret is not none and
+        _openwisp_secret | length > 0
+      }}
+
+- name: Avviso se org non configurata per openwisp (build continua senza openwisp-config)
+  ansible.builtin.debug:
+    msg: >
+      ATTENZIONE: org '{{ openwrt_org }}' non trovata in config/organizations/openwisp-orgs.yml
+      oppure manca la secret in vault_openwisp_secrets.
+      Il firmware sarà compilato SENZA /etc/config/openwisp.
+      Per abilitare, aggiungi l'org in openwisp-orgs.yml e la secret nel vault.
+  when: not _openwisp_enabled | bool
+
+# -----------------------------------------------------------------------------
+# Overlay root_files
+# -----------------------------------------------------------------------------
 
 - name: Rimuovi overlay files esistente
   ansible.builtin.file:
@@ -28,12 +54,19 @@
     path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/config"
     state: directory
     mode: "0755"
+  when: _openwisp_enabled | bool
 
 - name: Genera /etc/config/openwisp da template
   ansible.builtin.template:
     src: openwisp-config.j2
     dest: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/config/openwisp"
     mode: "0600"
+  when: _openwisp_enabled | bool
+  vars:
+    _org: "{{ openwisp_orgs[openwrt_org] }}"
+    _openwisp_controller_url: "{{ _org.controller_url }}"
+    _openwisp_management_interface: "{{ _org.management_interface }}"
+    _openwisp_shared_secret: "{{ vault_openwisp_secrets[openwrt_org] }}"
 
 - name: Scrivi uci-default 99-br-cp (Captive Portal abilitato)
   ansible.builtin.template:
