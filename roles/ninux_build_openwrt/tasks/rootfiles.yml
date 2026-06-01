@@ -1,6 +1,17 @@
 ---
 # tasks/rootfiles.yml - Prepara overlay root_files nel buildroot OpenWrt
 
+- name: Verifica che openwisp_shared_secret sia definita e non sia il valore di default
+  ansible.builtin.assert:
+    that:
+      - openwisp_shared_secret is defined
+      - openwisp_shared_secret != 'CHANGEME'
+      - openwisp_shared_secret | length > 0
+    fail_msg: >
+      openwisp_shared_secret non è configurata correttamente.
+      Aggiungi 'vault_openwisp_shared_secret: "<secret>"' in inventory/vault.yml
+      (cifrato con ansible-vault), oppure passa -e openwisp_shared_secret=<secret>
+
 - name: Rimuovi overlay files esistente
   ansible.builtin.file:
     path: "{{ openwrt_src_dir }}/files"
