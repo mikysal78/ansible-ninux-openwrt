@@ -43,12 +43,15 @@ openwrt_cp_variants: true
 openwisp_orgs:
   basilicata:
     controller_url: "https://controller.nnxx.ninux.org"
-    management_interface: "owz12345"
+    management_interface: "owzt0d3e97"
     shared_secret: !vault |
           $ANSIBLE_VAULT;1.1;AES256
-          # PLACEHOLDER — sostituire con output di:
-          # ansible-vault encrypt_string --vault-password-file /var/lib/jenkins/.vault_pass \
-          #   'Secretn1nuxB4s' --name 'shared_secret'
+          31313339666664336637626461633832666635393766666161393562363661383038653137656130
+          3937393666663435396165356430343930333762663630630a396662366337323366353062336165
+          38396463366265646236333439306266633165336231356239643937343534333532306330383761
+          6161663363616532610a353734363033346633353130336134346162393065316565633734303364
+          3362
+
   # roma:
   #   controller_url: "https://controller.nnxx.ninux.org"
   #   management_interface: "owzABCDE"
@@ -69,15 +72,20 @@ openwisp_url: ""
 
 # Credenziali API OpenWISP Firmware Upgrader (cifrate con encrypt_string)
 openwisp_username: !vault |
-      $ANSIBLE_VAULT;1.1;AES256
-      # PLACEHOLDER — sostituire con output di:
-      # ansible-vault encrypt_string --vault-password-file /var/lib/jenkins/.vault_pass \
-      #   'admin' --name 'openwisp_username'
+          $ANSIBLE_VAULT;1.1;AES256
+          36353731366563366364393464646237316631323632386663313566653332313565383161646535
+          3462656533613831613765343662363837303163616439330a366637646466373933323263336238
+          32623736613236643761633561613038643934383265323634303466646462346564656463656332
+          3234346464363662330a663162356536383565653864346464306664303062623661653330653932
+          6466
 openwisp_password: !vault |
-      $ANSIBLE_VAULT;1.1;AES256
-      # PLACEHOLDER — sostituire con output di:
-      # ansible-vault encrypt_string --vault-password-file /var/lib/jenkins/.vault_pass \
-      #   'changeme' --name 'openwisp_password'
+          $ANSIBLE_VAULT;1.1;AES256
+          39373136323262353564663236376531303736646432653934373938303431323233353766313633
+          6638373431306365363635313238396465353033366433370a396638633735613733313864616630
+          66376337313232663563633165306264376364323564656235363636663862313238373163616439
+          6438393764643964340a666330396535333861656238303364366236353835373738656164346631
+          3630
+
 
 # Slug e UUID dell'organizzazione OpenWISP
 openwisp_org_slug: "{{ openwrt_org }}"
