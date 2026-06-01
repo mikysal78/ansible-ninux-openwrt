@@ -5,8 +5,8 @@
 # QUESTO È IL FILE DA MODIFICARE per personalizzare il build system.
 # Contiene tutte le variabili di configurazione in un posto solo.
 #
-# Per i segreti (shared_secret openwisp) usa inventory/vault.yml (cifrato):
-#   ansible-vault edit inventory/vault.yml --vault-password-file /var/lib/jenkins/.vault_pass
+# Per i segreti usa ansible-vault encrypt_string direttamente in questo file.
+#   ansible-vault encrypt_string --vault-password-file /var/lib/jenkins/.vault_pass 'VALORE' --name 'NOME'
 # =============================================================================
 
 
@@ -36,7 +36,7 @@ openwrt_cp_variants: true
 # OPENWISP-CONFIG — Configurazione agente per organizzazione
 #
 # Aggiungere una sezione per ogni org Ninux.
-# Le shared_secret NON vanno qui — solo in inventory/vault.yml (cifrato).
+# Le shared_secret NON vanno qui — solo in ninux.yml (encrypt_string inline).
 # Se un'org non è definita qui, la build salta /etc/config/openwisp.
 # -----------------------------------------------------------------------------
 
@@ -87,9 +87,17 @@ openwisp_password: !vault |
           3630
 
 
-# Slug e UUID dell'organizzazione OpenWISP
-openwisp_org_slug: "{{ openwrt_org }}"
-openwisp_org_id: ""
+# Slug dell'organizzazione OpenWISP (nome breve, es. "default")
+# NON necessariamente uguale a openwrt_org
+openwisp_org_slug: "default"
+
+# UUID dell'organizzazione OpenWISP (cifrato con encrypt_string)
+# Recuperabile da: Admin OpenWISP → Organizations → <org> → URL
+# ansible-vault encrypt_string --vault-password-file /var/lib/jenkins/.vault_pass \
+#   'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' --name 'openwisp_org_id'
+openwisp_org_id: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      # PLACEHOLDER — sostituire con output di encrypt_string
 
 # Nome della category firmware in OpenWISP
 openwisp_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"

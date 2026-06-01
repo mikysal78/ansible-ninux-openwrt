@@ -7,7 +7,7 @@
 # del ruolo (roles/ninux_build_openwrt/defaults/main.yml).
 #
 # Viene letto automaticamente da tutti i playbook tramite group_vars.
-# Per i segreti (password OpenWISP) usa inventory/vault.yml (cifrato).
+# Per i segreti (password OpenWISP) usa ninux.yml (encrypt_string inline).
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -130,7 +130,7 @@ openwrt_remove_packages:
 # -----------------------------------------------------------------------------
 
 # Abilita upload automatico su OpenWISP dopo la build
-# Le credenziali vanno in inventory/vault.yml (cifrato con ansible-vault)
+# Le credenziali vanno in ninux.yml (encrypt_string inline)
 openwisp_upload_enabled: false
 
 # URL base dell'istanza OpenWISP (es. https://openwisp.example.org)
@@ -154,10 +154,10 @@ openwisp_upgrade_group: ""
 # -----------------------------------------------------------------------------
 # OPENWISP-CONFIG (agente sul firmware)
 # La configurazione per org (controller_url, management_interface) è in:
-#   config/organizations/openwisp-orgs.yml
+#   ninux.yml (sezione openwisp_orgs)
 # Le shared_secret sono in:
-#   inventory/vault.yml  →  vault_openwisp_secrets.<org>
-# Se un'org non è definita in openwisp-orgs.yml o manca la secret nel vault,
+#   ninux.yml →  ninux.yml (encrypt_string inline)
+# Se un'org non è definita in ninux.yml o manca la secret nel vault,
 # la build continua senza generare /etc/config/openwisp.
 # -----------------------------------------------------------------------------
 

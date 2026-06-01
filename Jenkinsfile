@@ -113,8 +113,7 @@ Workspace : ${WORKSPACE}
             when { expression { !params.SKIP_DEPS } }
             steps {
                 script {
-                    def vaultArg = fileExists("${WORKSPACE}/inventory/vault.yml") ? "--vault-password-file ${VAULT_PASS_FILE}" : ""
-                    sh "ansible-playbook playbooks/build_all.yml -e openwrt_work_dir=${WORKSPACE} -e openwrt_org=${params.OPENWRT_ORG} -e openwrt_version=${params.OPENWRT_VERSION} --tags deps ${vaultArg}"
+                    sh "ansible-playbook playbooks/build_all.yml -e openwrt_work_dir=${WORKSPACE} -e openwrt_org=${params.OPENWRT_ORG} -e openwrt_version=${params.OPENWRT_VERSION} --tags deps --vault-password-file ${VAULT_PASS_FILE}"
                 }
             }
         }
@@ -144,9 +143,7 @@ Workspace : ${WORKSPACE}
                         if (params.OPENWISP_TRIGGER_UPGRADE) args << "-e openwisp_trigger_upgrade=true"
                         if (params.OPENWISP_URL)             args << "-e openwisp_url=${params.OPENWISP_URL}"
                     }
-                    if (fileExists("${WORKSPACE}/inventory/vault.yml")) {
-                        args << "--vault-password-file ${VAULT_PASS_FILE}"
-                    }
+                    args << "--vault-password-file ${VAULT_PASS_FILE}"
                     sh args.join(' ')
                 }
             }

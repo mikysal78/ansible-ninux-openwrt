@@ -3,4 +3,4 @@
 #
 # NON modificare questo file.
 # Tutte le variabili di configurazione sono in ninux.yml (root del repo).
-# I segreti (shared_secret openwisp) sono in inventory/vault.yml (cifrato).
+# I segreti (shared_secret openwisp) sono in ninux.yml (encrypt_string inline).

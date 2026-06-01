@@ -102,9 +102,17 @@ openwisp_password: !vault |
       $ANSIBLE_VAULT;1.1;AES256
       # PLACEHOLDER — sostituire con output di encrypt_string
 
-# Slug e UUID dell'organizzazione OpenWISP
-openwisp_org_slug: "{{ openwrt_org }}"
-openwisp_org_id: ""
+# Slug dell'organizzazione OpenWISP (nome breve, es. "default")
+# NON necessariamente uguale a openwrt_org
+openwisp_org_slug: "default"
+
+# UUID dell'organizzazione OpenWISP (cifrato con encrypt_string)
+# Recuperabile da: Admin OpenWISP → Organizations → <org> → URL
+# ansible-vault encrypt_string --vault-password-file /var/lib/jenkins/.vault_pass \
+#   'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' --name 'openwisp_org_id'
+openwisp_org_id: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      # PLACEHOLDER — sostituire con output di encrypt_string
 
 # Nome della category firmware in OpenWISP
 openwisp_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"
