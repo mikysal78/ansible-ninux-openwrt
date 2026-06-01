@@ -5,6 +5,10 @@
 
   vars_files:
     - "{{ playbook_dir }}/../config/build.yml"
+    - "{{ playbook_dir }}/../inventory/vault.yml"
+  # NOTA: vault.yml è cifrato con ansible-vault. Viene decifrare automaticamente
+  # con --vault-password-file. Se non esiste (sviluppo locale senza vault),
+  # passare -e openwisp_shared_secret=<secret> come extra-var.
 
   pre_tasks:
     - name: Valida variabile org
