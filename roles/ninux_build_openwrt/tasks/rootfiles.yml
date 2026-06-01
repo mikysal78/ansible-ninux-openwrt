@@ -1,6 +1,37 @@
 ---
 # tasks/rootfiles.yml - Prepara overlay root_files nel buildroot OpenWrt
 
+# -----------------------------------------------------------------------------
+# Risolvi configurazione openwisp-config per questa org
+# -----------------------------------------------------------------------------
+
+- name: Controlla se org è definita in openwisp_orgs (ninux.yml)
+  ansible.builtin.set_fact:
+    _openwisp_org_cfg: "{{ openwisp_orgs[openwrt_org] | default(None) }}"
+
+- name: Imposta _openwisp_enabled (true solo se org configurata e shared_secret presente)
+  ansible.builtin.set_fact:
+    _openwisp_enabled: >-
+      {{
+        _openwisp_org_cfg is not none and
+        _openwisp_org_cfg | length > 0 and
+        _openwisp_org_cfg.shared_secret is defined and
+        _openwisp_org_cfg.shared_secret | string | length > 0
+      }}
+
+- name: Avviso se org non configurata per openwisp (build continua senza openwisp-config)
+  ansible.builtin.debug:
+    msg: >
+      ATTENZIONE: org '{{ openwrt_org }}' non trovata in openwisp_orgs (ninux.yml)
+      oppure manca shared_secret. Il firmware sarà compilato SENZA /etc/config/openwisp.
+      Per abilitare, aggiungi l'org in ninux.yml con controller_url, management_interface
+      e shared_secret (cifrata con ansible-vault encrypt_string).
+  when: not _openwisp_enabled | bool
+
+# -----------------------------------------------------------------------------
+# Overlay root_files
+# -----------------------------------------------------------------------------
+
 - name: Rimuovi overlay files esistente
   ansible.builtin.file:
     path: "{{ openwrt_src_dir }}/files"
@@ -11,6 +42,24 @@
     path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults"
     state: directory
     mode: "0755"
+
+- name: Crea directory etc/config per org (openwisp)
+  ansible.builtin.file:
+    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/config"
+    state: directory
+    mode: "0755"
+  when: _openwisp_enabled | bool
+
+- name: Genera /etc/config/openwisp da template
+  ansible.builtin.template:
+    src: openwisp-config.j2
+    dest: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/config/openwisp"
+    mode: "0600"
+  when: _openwisp_enabled | bool
+  vars:
+    _openwisp_controller_url: "{{ openwisp_orgs[openwrt_org].controller_url }}"
+    _openwisp_management_interface: "{{ openwisp_orgs[openwrt_org].management_interface }}"
+    _openwisp_shared_secret: "{{ openwisp_orgs[openwrt_org].shared_secret }}"
 
 - name: Scrivi uci-default 99-br-cp (Captive Portal abilitato)
   ansible.builtin.template:

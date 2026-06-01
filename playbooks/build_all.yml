@@ -4,14 +4,17 @@
   gather_facts: true
 
   vars_files:
-    - "{{ playbook_dir }}/../config/build.yml"
+    - "{{ playbook_dir }}/../ninux.yml"
+  # Le stringhe sensibili (shared_secret, username, password) sono cifrate
+  # inline in ninux.yml con ansible-vault encrypt_string.
+  # Usare --vault-password-file /var/lib/jenkins/.vault_pass per decifrarle.
 
   pre_tasks:
     - name: Valida variabile org
       ansible.builtin.assert:
         that:
           - openwrt_org is defined and openwrt_org | length > 0
-        fail_msg: "Definisci openwrt_org in config/build.yml o con -e openwrt_org=xxx"
+        fail_msg: "Definisci openwrt_org in ninux.yml o con -e openwrt_org=xxx"
 
     - name: Scopri device disponibili per org
       ansible.builtin.find:

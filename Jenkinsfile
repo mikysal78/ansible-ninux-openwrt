@@ -60,13 +60,14 @@ pipeline {
         string(
             name: 'OPENWISP_URL',
             defaultValue: '',
-            description: 'URL OpenWISP (vuoto = da group_vars)'
+            description: 'URL OpenWISP Firmware Upgrader (vuoto = da group_vars)'
         )
     }
 
     environment {
         ANSIBLE_FORCE_COLOR       = 'true'
         ANSIBLE_HOST_KEY_CHECKING = 'false'
+        VAULT_PASS_FILE           = "${JENKINS_HOME}/.vault_pass"
     }
 
     stages {
@@ -111,7 +112,10 @@ Workspace : ${WORKSPACE}
         stage('Install dependencies') {
             when { expression { !params.SKIP_DEPS } }
             steps {
-                sh "ansible-playbook playbooks/build_all.yml -e openwrt_work_dir=${WORKSPACE} -e openwrt_org=${params.OPENWRT_ORG} -e openwrt_version=${params.OPENWRT_VERSION} --tags deps"
+                script {
+                    def vaultArg = fileExists("${WORKSPACE}/inventory/vault.yml") ? "--vault-password-file ${VAULT_PASS_FILE}" : ""
+                    sh "ansible-playbook playbooks/build_all.yml -e openwrt_work_dir=${WORKSPACE} -e openwrt_org=${params.OPENWRT_ORG} -e openwrt_version=${params.OPENWRT_VERSION} --tags deps ${vaultArg}"
+                }
             }
         }
 
@@ -141,7 +145,7 @@ Workspace : ${WORKSPACE}
                         if (params.OPENWISP_URL)             args << "-e openwisp_url=${params.OPENWISP_URL}"
                     }
                     if (fileExists("${WORKSPACE}/inventory/vault.yml")) {
-                        args << "--vault-password-file ${JENKINS_HOME}/.vault_pass"
+                        args << "--vault-password-file ${VAULT_PASS_FILE}"
                     }
                     sh args.join(' ')
                 }

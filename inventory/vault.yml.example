@@ -1,6 +1,0 @@
----
-# inventory/vault.yml - CIFRARE CON: ansible-vault encrypt inventory/vault.yml
-#
-# Credenziali OpenWISP - non committare mai in chiaro
-openwisp_username: "admin"
-openwisp_password: "changeme"

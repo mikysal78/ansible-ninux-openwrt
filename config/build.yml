@@ -152,6 +152,16 @@ openwisp_trigger_upgrade: false
 openwisp_upgrade_group: ""
 
 # -----------------------------------------------------------------------------
+# OPENWISP-CONFIG (agente sul firmware)
+# La configurazione per org (controller_url, management_interface) è in:
+#   config/organizations/openwisp-orgs.yml
+# Le shared_secret sono in:
+#   inventory/vault.yml  →  vault_openwisp_secrets.<org>
+# Se un'org non è definita in openwisp-orgs.yml o manca la secret nel vault,
+# la build continua senza generare /etc/config/openwisp.
+# -----------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
 # DIPENDENZE DI BUILD (apt)
 # Modificare solo se si usa una distribuzione non standard
 # -----------------------------------------------------------------------------
