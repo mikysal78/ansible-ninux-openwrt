@@ -62,11 +62,6 @@ pipeline {
             defaultValue: '',
             description: 'URL OpenWISP Firmware Upgrader (vuoto = da group_vars)'
         )
-        string(
-            name: 'OPENWISP_CONTROLLER_URL',
-            defaultValue: 'https://controller.nnxx.ninux.org',
-            description: 'URL controller openwisp-config nel firmware (option url in /etc/config/openwisp)'
-        )
     }
 
     environment {
@@ -136,7 +131,6 @@ Workspace : ${WORKSPACE}
                         "-e openwrt_tmpfs_size=${params.TMPFS_SIZE}",
                         "-e openwrt_ccache_dir=${params.CCACHE_DIR}",
                         "-e openwrt_ccache_maxsize=${params.CCACHE_SIZE}",
-                        "-e openwisp_controller_url=${params.OPENWISP_CONTROLLER_URL}",
                         "--skip-tags deps"
                     ]
                     if (params.VPN_VARIANTS != 'ALL') {

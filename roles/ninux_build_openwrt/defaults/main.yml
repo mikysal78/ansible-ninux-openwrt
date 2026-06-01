@@ -90,9 +90,5 @@ openwisp_trigger_upgrade: false
 openwisp_upgrade_group: ""
 
 # openwisp-config (agente sul firmware)
-# URL del controller OpenWISP a cui il device si registra
-openwisp_controller_url: "https://controller.nnxx.ninux.org"
-# shared_secret per la registrazione automatica del device.
-# ATTENZIONE: varia per organizzazione - definire in config/build.yml
-# o in inventory/vault.yml (cifrato). Non lasciare il valore di default.
-openwisp_shared_secret: "CHANGEME"
+# La configurazione per org è in config/organizations/openwisp-orgs.yml
+# Le secret sono in inventory/vault.yml → vault_openwisp_secrets.<org>

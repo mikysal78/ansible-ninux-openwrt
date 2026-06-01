@@ -3,15 +3,15 @@
 # Organization: {{ openwrt_org }}
 
 config controller 'http'
-	option url '{{ openwisp_controller_url }}'
+	option url '{{ _openwisp_controller_url }}'
 	option interval '120'
 	option management_interval '10'
 	#option registration_interval '30'
 	option verify_ssl '1'
-	option shared_secret '{{ openwisp_shared_secret }}'
+	option shared_secret '{{ _openwisp_shared_secret }}'
 	#option consistent_key '1'
 	#option mac_interface 'eth0'
-	option management_interface 'owz12345'
+	option management_interface '{{ _openwisp_management_interface }}'
 	#option merge_config '1'
 	#option tags ''
 	#option test_config '1'
