@@ -188,8 +188,7 @@
       - "*-sysupgrade.bin"
       - "*-sysupgrade.img.gz"
       - "*-sysupgrade.img"
-      - "*combined*.img.gz"
-      - "*combined*.img"
+      - "*squashfs-combined-efi.img.gz"
     file_type: file
   register: _ow_sysupgrade_files
 
