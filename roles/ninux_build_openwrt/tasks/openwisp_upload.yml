@@ -187,9 +187,18 @@
     patterns:
       - "*-sysupgrade.bin"
       - "*-sysupgrade.img.gz"
+      - "*-sysupgrade.img"
+      - "*combined*.img.gz"
+      - "*combined*.img"
     file_type: file
   register: _ow_sysupgrade_files
 
+- name: "[OpenWISP] File trovati per upload"
+  ansible.builtin.debug:
+    msg: "{{ _ow_sysupgrade_files.files | map(attribute='path') | map('basename') | list }}"
+  when: _ow_sysupgrade_files.files | length > 0
+
+# ---- 6. Carica immagini con curl (gestisce binario correttamente) --
 - name: "[OpenWISP] Avviso se nessun sysupgrade trovato"
   ansible.builtin.debug:
     msg: >-
@@ -197,8 +206,7 @@
       Upload saltato per questa variante.
   when: _ow_sysupgrade_files.files | length == 0
 
-# ---- 6. Carica immagini con curl (gestisce binario correttamente) --
-- name: "[OpenWISP] Carica sysupgrade: {{ item.path | basename }}"
+- name: "[OpenWISP] Carica sysupgrade"
   ansible.builtin.command:
     cmd: >-
       curl -s -o /tmp/ow_upload_response.json -w "%{http_code}"
@@ -214,7 +222,7 @@
   loop_control:
     label: "{{ item.path | basename }}"
   when: _ow_sysupgrade_files.files | length > 0
-  no_log: true  # evita token nei log
+  no_log: true
 
 - name: "[OpenWISP] Riepilogo upload"
   ansible.builtin.debug:
