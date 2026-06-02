@@ -15,6 +15,7 @@
 - name: "[OpenWISP] Imposta token"
   ansible.builtin.set_fact:
     _ow_token: "{{ _ow_token_global }}"
+  no_log: true
 
 # ---- 2. Risolvi UUID organizzazione ------------------------------
 - name: "[OpenWISP] Cerca organizzazione per slug"
@@ -199,7 +200,7 @@
       -X POST
       -H "Authorization: Bearer {{ _ow_token }}"
       -F "file=@{{ item.path }}"
-      -F "type=sysupgrade"
+      -F "type=upgrade"
       {{ openwisp_url }}/api/v1/firmware-upgrader/build/{{ _ow_build_id }}/image/
   register: _ow_upload_result
   changed_when: _ow_upload_result.stdout | int == 201
