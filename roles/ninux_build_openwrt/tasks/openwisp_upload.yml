@@ -11,29 +11,10 @@
 #   5. Carica ogni file sysupgrade come Image
 #   6. (opzionale) Avvia batch upgrade
 
-# ---- 1. Autenticazione -------------------------------------------
-# Il token viene normalmente iniettato da artifacts.yml (_ow_token_global)
-# per evitare login multipli simultanei (429 Too Many Requests).
-# Fallback: login autonomo se _ow_token_global non è definito.
-- name: "[OpenWISP] Autenticazione (fallback)"
-  ansible.builtin.uri:
-    url: "{{ openwisp_url }}/api/v1/users/token/"
-    method: POST
-    body_format: json
-    body:
-      username: "{{ openwisp_username }}"
-      password: "{{ openwisp_password }}"
-    status_code: 200
-  register: _ow_auth
-  no_log: true
-  retries: 5
-  delay: 30
-  until: _ow_auth.status == 200
-  when: _ow_token_global is not defined
-
+# ---- 1. Token ---------------------------------------------------
 - name: "[OpenWISP] Imposta token"
   ansible.builtin.set_fact:
-    _ow_token: "{{ _ow_token_global if _ow_token_global is defined else _ow_auth.json.token }}"
+    _ow_token: "{{ _ow_token_global }}"
   no_log: true
 
 # ---- 2. Risolvi UUID organizzazione ------------------------------

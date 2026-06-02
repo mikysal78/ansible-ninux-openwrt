@@ -121,25 +121,9 @@
       - "File   : {{ _copied_files.files | map(attribute='path') | map('basename') | list }}"
 
 # Upload OpenWISP (opzionale)
-- name: "[OpenWISP] Autenticazione unica pre-upload"
-  ansible.builtin.uri:
-    url: "{{ openwisp_url }}/api/v1/users/token/"
-    method: POST
-    body_format: json
-    body:
-      username: "{{ openwisp_username }}"
-      password: "{{ openwisp_password }}"
-    status_code: 200
-  register: _ow_auth_global
-  no_log: true
-  retries: 5
-  delay: 30
-  until: _ow_auth_global.status == 200
-  when: openwisp_upload_enabled | bool
-
-- name: "[OpenWISP] Imposta token globale"
+- name: "[OpenWISP] Imposta token da openwisp_api_token"
   ansible.builtin.set_fact:
-    _ow_token_global: "{{ _ow_auth_global.json.token }}"
+    _ow_token_global: "{{ openwisp_api_token | string }}"
   no_log: true
   when: openwisp_upload_enabled | bool
 

@@ -94,7 +94,15 @@ openwisp_upload_enabled: false
 # URL base dell'istanza OpenWISP Firmware Upgrader (es. https://openwisp.example.org)
 openwisp_url: ""
 
-# Credenziali API OpenWISP Firmware Upgrader (cifrate con encrypt_string)
+# Token API permanente OpenWISP (cifrato con encrypt_string)
+# Recuperabile da: Admin OpenWISP → Users → <utente> → API Keys
+# ansible-vault encrypt_string --vault-password-file /var/lib/jenkins/.vault_pass \
+#   'il-tuo-token' --name 'openwisp_api_token'
+openwisp_api_token: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      # PLACEHOLDER — sostituire con output di encrypt_string
+
+# Credenziali utente OpenWISP (opzionali, non usate per l'upload)
 openwisp_username: !vault |
       $ANSIBLE_VAULT;1.1;AES256
       # PLACEHOLDER — sostituire con output di encrypt_string
