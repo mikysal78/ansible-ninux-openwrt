@@ -95,7 +95,7 @@ nano ninux.yml
 #    Vedi sezione "Gestione segreti con ansible-vault"
 
 # 5. Verifica i device disponibili
-ls config/organizations/basilicata/
+ls config/organizations/default/
 
 # 6. Lancia la build
 ansible-playbook playbooks/build_all.yml \
@@ -271,7 +271,7 @@ Pipeline e Git sono già inclusi nei plugin suggeriti.
 
 | Parametro | Default | Descrizione |
 |-----------|---------|-------------|
-| `OPENWRT_ORG` | `basilicata` | Organizzazione Ninux |
+| `OPENWRT_ORG` | `default` | Organizzazione Ninux |
 | `OPENWRT_VERSION` | `v25.12.4` | Tag OpenWrt |
 | `VPN_VARIANTS` | `ALL` | `ALL` / `NO` / `ZeroTier` / `WireGuard` / `DualVPN` |
 | `CAPTIVE_PORTAL_VARIANTS` | false | Compila anche varianti con CP |
@@ -309,7 +309,7 @@ Sezioni principali:
 ```yaml
 # Versione e org
 openwrt_version: "v25.12.4"
-openwrt_org: "basilicata"
+openwrt_org: "default"
 
 # Varianti da compilare
 openwrt_vpn_variants: [NO, ZeroTier, WireGuard, DualVPN]
@@ -317,7 +317,7 @@ openwrt_cp_variants: false
 
 # openwisp-config per org (shared_secret cifrata con encrypt_string)
 openwisp_orgs:
-  basilicata:
+  default:
     controller_url: "https://controller.nnxx.ninux.org"
     management_interface: "owz12345"
     shared_secret: !vault |
@@ -394,7 +394,7 @@ ansible-vault encrypt_string \
 
 ```bash
 ansible -i inventory/hosts.yml localhost \
-  -m debug -a "var=openwisp_orgs.basilicata.shared_secret" \
+  -m debug -a "var=openwisp_orgs.default.shared_secret" \
   -e @ninux.yml \
   --vault-password-file /var/lib/jenkins/.vault_pass
 ```
@@ -409,10 +409,10 @@ ansible -i inventory/hosts.yml localhost \
 # 1. Genera il .config con OpenWrt menuconfig
 cd /path/to/openwrt-src
 make menuconfig   # seleziona target e salva
-cp .config /repo/config/organizations/basilicata/nome_device.config
+cp .config /repo/config/organizations/default/nome_device.config
 
 # 2. Commita
-git add config/organizations/basilicata/nome_device.config
+git add config/organizations/default/nome_device.config
 git commit -m "feat: aggiungi device nome_device"
 ```
 
@@ -426,7 +426,7 @@ L'autodiscovery lo includerà automaticamente nella prossima build.
 mkdir -p config/organizations/roma
 
 # 2. Aggiungi i .config dei device
-cp config/organizations/basilicata/*.config config/organizations/roma/
+cp config/organizations/default/*.config config/organizations/roma/
 
 # 3. Aggiungi la sezione in ninux.yml
 nano ninux.yml
@@ -539,7 +539,7 @@ In `ninux.yml`:
 ```yaml
 openwisp_upload_enabled: true
 openwisp_url: "https://openwisp.ninux.org"
-openwisp_org_slug: "basilicata"
+openwisp_org_slug: "default"
 openwisp_org_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 openwisp_trigger_upgrade: false   # true = avvia upgrade automatico
 
@@ -569,7 +569,7 @@ Build → artifacts.yml → openwisp_upload.yml
 ```
 output/
 └── v25.12.4/
-    └── basilicata/
+    └── default/
         ├── Standard/
         │   ├── VPN-NO/glinet_gl-mt300n-v2/
         │   ├── VPN-ZeroTier/glinet_gl-mt300n-v2/

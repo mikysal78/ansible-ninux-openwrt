@@ -121,12 +121,27 @@
       - "File   : {{ _copied_files.files | map(attribute='path') | map('basename') | list }}"
 
 # Upload OpenWISP (opzionale)
-- name: "[OpenWISP] Imposta token da openwisp_api_token"
+- name: "[OpenWISP] Imposta token da org '{{ openwrt_org }}'"
   ansible.builtin.set_fact:
-    _ow_token_global: "{{ openwisp_api_token | string }}"
+    _ow_token_global: "{{ openwisp_orgs[openwrt_org].api_token | string }}"
   no_log: true
-  when: openwisp_upload_enabled | bool
+  when:
+    - openwisp_upload_enabled | bool
+    - openwisp_orgs[openwrt_org] is defined
+    - openwisp_orgs[openwrt_org].api_token is defined
+
+- name: "[OpenWISP] Avviso se api_token non configurato per org '{{ openwrt_org }}'"
+  ansible.builtin.debug:
+    msg: >-
+      ATTENZIONE: api_token non definito per org '{{ openwrt_org }}' in ninux.yml.
+      Upload OpenWISP saltato. Aggiungi api_token sotto openwisp_orgs.{{ openwrt_org }}.
+  when:
+    - openwisp_upload_enabled | bool
+    - (openwisp_orgs[openwrt_org] is not defined or
+       openwisp_orgs[openwrt_org].api_token is not defined)
 
 - name: Upload firmware su OpenWISP Firmware Upgrader
   ansible.builtin.include_tasks: openwisp_upload.yml
-  when: openwisp_upload_enabled | bool
+  when:
+    - openwisp_upload_enabled | bool
+    - _ow_token_global is defined

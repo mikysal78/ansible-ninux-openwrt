@@ -4,7 +4,7 @@ pipeline {
     parameters {
         string(
             name: 'OPENWRT_ORG',
-            defaultValue: 'basilicata',
+            defaultValue: 'default',
             description: 'Organizzazione Ninux'
         )
         string(
