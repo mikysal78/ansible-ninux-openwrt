@@ -193,6 +193,21 @@
       Upload saltato per questa variante.
   when: _ow_sysupgrade_files.files | length == 0
 
+- name: "[OpenWISP] Ispezione schema API image upload"
+  ansible.builtin.command:
+    cmd: >-
+      curl -s -X OPTIONS
+      -H "Authorization: Bearer {{ _ow_token }}"
+      {{ openwisp_url }}/api/v1/firmware-upgrader/build/{{ _ow_build_id }}/image/
+  register: _ow_api_schema
+  changed_when: false
+  when: _ow_sysupgrade_files.files | length > 0
+
+- name: "[OpenWISP] Schema API (choices type)"
+  ansible.builtin.debug:
+    msg: "{{ _ow_api_schema.stdout }}"
+  when: _ow_sysupgrade_files.files | length > 0
+
 - name: "[OpenWISP] Carica sysupgrade"
   ansible.builtin.command:
     cmd: >-
@@ -200,7 +215,6 @@
       -X POST
       -H "Authorization: Bearer {{ _ow_token }}"
       -F "file=@{{ item.path }}"
-      -F "type=upgrade"
       {{ openwisp_url }}/api/v1/firmware-upgrader/build/{{ _ow_build_id }}/image/
   register: _ow_upload_result
   changed_when: _ow_upload_result.stdout | int == 201
