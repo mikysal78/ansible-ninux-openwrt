@@ -1,12 +1,21 @@
 ---
 # =============================================================================
-# ninux.yml  —  Configurazione Ninux OpenWrt Build System
+# ninux.yml.example  —  Template di configurazione Ninux OpenWrt Build System
 #
-# QUESTO È IL FILE DA MODIFICARE per personalizzare il build system.
-# Contiene tutte le variabili di configurazione in un posto solo.
+# ISTRUZIONI PER UNA NUOVA INSTALLAZIONE:
+#   1. Copia questo file come ninux.yml nella root del repo
+#      cp ninux.yml.example ninux.yml
 #
-# Per i segreti (shared_secret openwisp) usa inventory/vault.yml (cifrato):
-#   ansible-vault edit inventory/vault.yml --vault-password-file /var/lib/jenkins/.vault_pass
+#   2. Modifica ninux.yml con i valori della tua organizzazione
+#
+#   3. Genera le stringhe cifrate per i campi contrassegnati con !vault:
+#      ansible-vault encrypt_string \
+#        --vault-password-file /var/lib/jenkins/.vault_pass \
+#        'IL_TUO_VALORE' --name 'NOME_CAMPO'
+#      Incolla l'output al posto del blocco PLACEHOLDER corrispondente.
+#
+#   4. Committa ninux.yml nel repo — i valori sensibili sono cifrati inline
+#      e sicuri da versionare. Solo chi ha il vault_pass può decifrarli.
 # =============================================================================
 
 
@@ -14,11 +23,11 @@
 # BUILD — Versione e organizzazione
 # -----------------------------------------------------------------------------
 
-# Tag OpenWrt da compilare
+# Tag OpenWrt da compilare (es. v25.12.4, v24.10.0, snapshot)
 openwrt_version: "v25.12.4"
 
 # Organizzazione Ninux attiva — corrisponde a config/organizations/<org>/
-openwrt_org: "basilicata"
+openwrt_org: "default"
 
 # Varianti VPN da compilare per ogni device
 # Valori possibili: NO, ZeroTier, WireGuard, DualVPN
@@ -36,12 +45,17 @@ openwrt_cp_variants: true
 # OPENWISP-CONFIG — Configurazione agente per organizzazione
 #
 # Aggiungere una sezione per ogni org Ninux.
-# Le shared_secret NON vanno qui — solo in inventory/vault.yml (cifrato).
+# shared_secret DEVE essere cifrata con ansible-vault encrypt_string.
 # Se un'org non è definita qui, la build salta /etc/config/openwisp.
+#
+# Per generare shared_secret cifrata:
+#   ansible-vault encrypt_string \
+#     --vault-password-file /var/lib/jenkins/.vault_pass \
+#     'LA_TUA_SECRET' --name 'shared_secret'
 # -----------------------------------------------------------------------------
 
 openwisp_orgs:
-  basilicata:
+  default:
     controller_url: "https://controller.nnxx.ninux.org"
     management_interface: "owzt0d3e97"
     shared_secret: !vault |
@@ -51,13 +65,24 @@ openwisp_orgs:
           38396463366265646236333439306266633165336231356239643937343534333532306330383761
           6161663363616532610a353734363033346633353130336134346162393065316565633734303364
           3362
+    api_token: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          38373862313237353865383835636131343266353765653466393332356536653761373465313562
+          6134363564656333376566396538363739633563396161320a653065306334386335313130373137
+          32623963353532363435663832666333626635356431383161373563393539343237383838313939
+          3866346434636431300a333534346537643035356537643962643063316566633537393830373131
+          36313363653661386139363336666463393965373062383165666633393339306463383934366261
+          6636636231333266363661326464653634333266306261316561
 
   # roma:
   #   controller_url: "https://controller.nnxx.ninux.org"
   #   management_interface: "owzABCDE"
   #   shared_secret: !vault |
   #         $ANSIBLE_VAULT;1.1;AES256
-  #         <stringa cifrata>
+  #         # PLACEHOLDER
+  #   api_token: !vault |
+  #         $ANSIBLE_VAULT;1.1;AES256
+  #         # PLACEHOLDER
 
 
 # -----------------------------------------------------------------------------
@@ -67,29 +92,25 @@ openwisp_orgs:
 # Abilita upload automatico su OpenWISP dopo la build
 openwisp_upload_enabled: false
 
-# URL base dell'istanza OpenWISP Firmware Upgrader
-openwisp_url: ""
+# URL base dell'istanza OpenWISP Firmware Upgrader (es. https://openwisp.example.org)
+openwisp_url: "https://controller.nnxx.ninux.org"
 
-# Credenziali API OpenWISP Firmware Upgrader (cifrate con encrypt_string)
-openwisp_username: !vault |
+# Slug dell'organizzazione OpenWISP (nome breve, es. "default")
+# NON necessariamente uguale a openwrt_org
+openwisp_org_slug: "default"
+
+# UUID dell'organizzazione OpenWISP (cifrato con encrypt_string)
+# Recuperabile da: Admin OpenWISP → Organizations → <org> → URL
+# ansible-vault encrypt_string --vault-password-file /var/lib/jenkins/.vault_pass \
+#   'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' --name 'openwisp_org_id'
+openwisp_org_id: !vault |
           $ANSIBLE_VAULT;1.1;AES256
-          36353731366563366364393464646237316631323632386663313566653332313565383161646535
-          3462656533613831613765343662363837303163616439330a366637646466373933323263336238
-          32623736613236643761633561613038643934383265323634303466646462346564656463656332
-          3234346464363662330a663162356536383565653864346464306664303062623661653330653932
-          6466
-openwisp_password: !vault |
-          $ANSIBLE_VAULT;1.1;AES256
-          39373136323262353564663236376531303736646432653934373938303431323233353766313633
-          6638373431306365363635313238396465353033366433370a396638633735613733313864616630
-          66376337313232663563633165306264376364323564656235363636663862313238373163616439
-          6438393764643964340a666330396535333861656238303364366236353835373738656164346631
-          3630
-
-
-# Slug e UUID dell'organizzazione OpenWISP
-openwisp_org_slug: "{{ openwrt_org }}"
-openwisp_org_id: ""
+          37393939383466303637666435386134343861626232356463386364653763396362303066313534
+          3166353337316263646334303230336166306163343033320a333539373732653062343731346135
+          62303139636662643036613065346662313535323938613834383536616235366137623139343266
+          3561363339643034340a393131643434643162316532373465336535396536313265616133643464
+          66383634363833666233353831636234646438313039626230313861633130313939636335663439
+          3337303962303233653361313138373032623736623737376565
 
 # Nome della category firmware in OpenWISP
 openwisp_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"

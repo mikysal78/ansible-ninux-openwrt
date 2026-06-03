@@ -7,11 +7,11 @@
 # Example matrix (group_vars/build_hosts.yml):
 #
 #   openwrt_build_matrix:
-#     - org: basilicata
+#     - org: default
 #       target: glinet_gl-mt300n-v2
 #       captive_portal: true
 #       vpn: ZeroTier
-#     - org: basilicata
+#     - org: default
 #       target: x86_64
 #       captive_portal: false
 #       vpn: WireGuard
