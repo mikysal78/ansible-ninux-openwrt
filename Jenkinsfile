@@ -62,6 +62,16 @@ pipeline {
             defaultValue: '',
             description: 'URL OpenWISP Firmware Upgrader (vuoto = da group_vars)'
         )
+        booleanParam(
+            name: 'GITHUB_RELEASE',
+            defaultValue: false,
+            description: 'Crea release GitHub e carica i firmware come assets'
+        )
+        string(
+            name: 'GITHUB_REPO',
+            defaultValue: 'mikysal78/ansible-ninux-openwrt',
+            description: 'Repository GitHub (owner/repo)'
+        )
     }
 
     environment {
@@ -178,6 +188,85 @@ Workspace : ${WORKSPACE}
                         fingerprint: true,
                         allowEmptyArchive: false
                     )
+                }
+            }
+        }
+
+        stage('GitHub Release') {
+            when {
+                expression {
+                    params.GITHUB_RELEASE || sh(
+                        script: "grep -qE '^github_release_enabled:\\s*true' ${WORKSPACE}/ninux.yml && echo yes || echo no",
+                        returnStdout: true
+                    ).trim() == 'yes'
+                }
+            }
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'github-release-token', variable: 'GH_TOKEN')]) {
+                        def version = params.OPENWRT_VERSION
+                        def org     = params.OPENWRT_ORG
+                        def tag     = "${version}-${org}-build${env.BUILD_NUMBER}"
+                        def repo    = sh(
+                            script: "grep -E '^github_repo:' ${WORKSPACE}/ninux.yml | awk '{print \$2}' | tr -d '\"'",
+                            returnStdout: true
+                        ).trim() ?: 'mikysal78/ansible-ninux-openwrt'
+                        def prerel  = sh(
+                            script: "grep -qE '^github_prerelease:\\s*true' ${WORKSPACE}/ninux.yml && echo true || echo false",
+                            returnStdout: true
+                        ).trim()
+                        def inclSha = sh(
+                            script: "grep -qE '^github_release_include_sha256:\\s*false' ${WORKSPACE}/ninux.yml && echo false || echo true",
+                            returnStdout: true
+                        ).trim()
+
+                        // Crea release via API GitHub
+                        def notes = "Build automatica Jenkins #${env.BUILD_NUMBER}" +
+                                    " | Org: ${org}" +
+                                    " | OpenWrt: ${version}" +
+                                    " | VPN: ${params.VPN_VARIANTS}" +
+                                    " | CP: ${params.CAPTIVE_PORTAL_VARIANTS}"
+
+                        def createScript = """
+curl -sf -X POST \\
+  -H "Authorization: Bearer \$GH_TOKEN" \\
+  -H "Content-Type: application/json" \\
+  -d '{"tag_name":"${tag}","name":"Ninux OpenWrt ${version} - ${org} #${env.BUILD_NUMBER}","body":"${notes}","draft":false,"prerelease":${prerel}}' \\
+  "https://api.github.com/repos/${repo}/releases" \\
+| python3 -c "import sys,json; print(json.load(sys.stdin)['id'])"
+"""
+                        def releaseId = sh(script: createScript, returnStdout: true).trim()
+                        echo "Release creata: ID=${releaseId}  tag=${tag}"
+
+                        // Upload assets
+                        def shaFilter = inclSha == 'true' ? "-o -name 'sha256sums'" : ""
+                        def files = sh(
+                            script: "find ${WORKSPACE}/output -type f \\( -name '*.bin' -o -name '*.img.gz' ${shaFilter} \\) | sort",
+                            returnStdout: true
+                        ).trim()
+
+                        if (!files) { echo "Nessun firmware trovato per upload GitHub"; return }
+
+                        files.split('\n').each { fp ->
+                            fp = fp.trim()
+                            if (!fp) return
+                            def assetName = fp
+                                .replace("${WORKSPACE}/output/${version}/${org}/", '')
+                                .replaceAll('/', '_')
+                            def code = sh(
+                                script: """curl -s -o /dev/null -w "%{http_code}" \\
+  -X POST \\
+  -H "Authorization: Bearer \$GH_TOKEN" \\
+  -H "Content-Type: application/octet-stream" \\
+  --data-binary @"${fp}" \\
+  "https://uploads.github.com/repos/${repo}/releases/${releaseId}/assets?name=${assetName}" """,
+                                returnStdout: true
+                            ).trim()
+                            echo "${code == '201' ? '[OK]' : '[WARN ' + code + ']'} ${assetName}"
+                        }
+
+                        echo "Release: https://github.com/${repo}/releases/tag/${tag}"
+                    }
                 }
             }
         }
