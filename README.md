@@ -16,8 +16,9 @@ Sistema di build automatizzato per firmware **OpenWrt** per i nodi della rete me
 8. [Uso da riga di comando](#uso-da-riga-di-comando)
 9. [Performance e ottimizzazioni](#performance-e-ottimizzazioni)
 10. [OpenWISP Firmware Upgrader](#openwisp-firmware-upgrader)
-11. [Struttura dei firmware prodotti](#struttura-dei-firmware-prodotti)
-12. [Troubleshooting](#troubleshooting)
+11. [GitHub Release](#github-release)
+12. [Struttura dei firmware prodotti](#struttura-dei-firmware-prodotti)
+13. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -538,29 +539,91 @@ In `ninux.yml`:
 
 ```yaml
 openwisp_upload_enabled: true
-openwisp_url: "https://openwisp.ninux.org"
+openwisp_url: "https://controller.nnxx.ninux.org"
 openwisp_org_slug: "default"
-openwisp_org_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+openwisp_org_id: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      <UUID cifrato>
 openwisp_trigger_upgrade: false   # true = avvia upgrade automatico
 
-openwisp_username: !vault |
-      $ANSIBLE_VAULT;1.1;AES256
-      <stringa cifrata>
-openwisp_password: !vault |
-      $ANSIBLE_VAULT;1.1;AES256
-      <stringa cifrata>
+openwisp_orgs:
+  default:
+    controller_url: "https://controller.nnxx.ninux.org"
+    management_interface: "owzXXXXX"
+    shared_secret: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          <stringa cifrata>
+    api_token: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          <token API cifrato>
 ```
 
 ### Flusso
 
 ```
 Build → artifacts.yml → openwisp_upload.yml
-  1. Login → token Bearer
-  2. Cerca/crea Category (org + device)
-  3. Crea Build (versione-target-VPN-CP)
-  4. Carica sysupgrade + factory
-  5. (opzionale) Batch upgrade
+  1. Token Bearer da api_token (nessun login, evita rate limiting)
+  2. Risolvi UUID organizzazione da ninux.yml
+  3. Cerca/crea Category (org + device target)
+  4. Crea Build (versione-target-VPN-CP)
+  5. Carica immagine sysupgrade (type = nome file senza prefisso openwrt-)
+  6. (opzionale) Batch upgrade
 ```
+
+---
+
+## GitHub Release
+
+Dopo ogni build è possibile pubblicare i firmware come release GitHub,
+rendendoli scaricabili direttamente dalla pagina Releases del repository.
+
+### Prerequisiti
+
+**1. Personal Access Token (PAT) su GitHub**
+
+Vai su `https://github.com/settings/tokens` → **Generate new token (fine-grained)**:
+
+| Campo | Valore |
+|-------|--------|
+| Repository access | solo `ansible-ninux-openwrt` |
+| Contents | **Read and write** |
+| Metadata | Read (obbligatorio) |
+
+**2. Credenziale Jenkins**
+
+Vai su **Manage Jenkins → Credentials → System → Global → Add Credentials**:
+
+| Campo | Valore |
+|-------|--------|
+| Kind | Secret text |
+| Secret | il token GitHub |
+| ID | `github-release-token` |
+
+### Configurazione in ninux.yml
+
+```yaml
+github_release_enabled: true
+github_repo: "mikysal78/ansible-ninux-openwrt"
+github_prerelease: true           # false per release ufficiali
+github_release_include_sha256: true
+```
+
+### Struttura della release
+
+Ogni release viene creata con tag `<versione>-<org>-build<N>`, es. `v25.12.4-default-build42`.
+Gli asset vengono caricati con nome che riflette il percorso:
+
+```
+Standard_VPN-NO_x86_64_openwrt-x86-64-generic-squashfs-combined-efi.img.gz
+Standard_VPN-ZeroTier_x86_64_openwrt-x86-64-generic-squashfs-combined-efi.img.gz
+CaptivePortal_VPN-WireGuard_glinet_gl-mt300n-v2_openwrt-...-squashfs-sysupgrade.bin
+...
+```
+
+### Attivazione da Jenkins
+
+Spunta il parametro **`GITHUB_RELEASE`** al lancio del job,
+oppure imposta `github_release_enabled: true` in `ninux.yml` per abilitarlo sempre.
 
 ---
 
