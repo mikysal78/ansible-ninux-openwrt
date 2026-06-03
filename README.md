@@ -539,16 +539,23 @@ In `ninux.yml`:
 
 ```yaml
 openwisp_upload_enabled: true
-openwisp_url: "https://openwisp.ninux.org"
+openwisp_url: "https://controller.nnxx.ninux.org"
 openwisp_org_slug: "default"
-openwisp_org_id: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+openwisp_org_id: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      <UUID cifrato>
 openwisp_trigger_upgrade: false   # true = avvia upgrade automatico
 
 openwisp_orgs:
   default:
-    api_token: !vault |
+    controller_url: "https://controller.nnxx.ninux.org"
+    management_interface: "owzXXXXX"
+    shared_secret: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           <stringa cifrata>
+    api_token: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          <token API cifrato>
 ```
 
 ### Flusso
@@ -597,7 +604,7 @@ Vai su **Manage Jenkins → Credentials → System → Global → Add Credential
 ```yaml
 github_release_enabled: true
 github_repo: "mikysal78/ansible-ninux-openwrt"
-github_prerelease: false          # true durante i test
+github_prerelease: true           # false per release ufficiali
 github_release_include_sha256: true
 ```
 
