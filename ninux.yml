@@ -133,13 +133,13 @@ openwisp_upgrade_group: ""
 # -----------------------------------------------------------------------------
 
 # Abilita creazione release GitHub dopo la build
-github_release_enabled: true
+github_release_enabled: false
 
 # Repository GitHub (owner/repo)
 github_repo: "mikysal78/ansible-ninux-openwrt"
 
 # Crea come pre-release (consigliato durante i test)
-github_prerelease: true
+github_prerelease: false
 
 # Includi file sha256sums come asset della release
 github_release_include_sha256: true
