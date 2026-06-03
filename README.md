@@ -75,7 +75,7 @@ ansible-ninux-openwrt/
 ```
 
 **Il file principale da modificare è `ninux.yml`** — contiene tutte le variabili di build,
-la configurazione openwisp-config per organizzazione e le password cifrati inline con `ansible-vault encrypt_string`.
+la configurazione openwisp-config per organizzazione e le password cifrate inline con `ansible-vault encrypt_string`.
 
 ---
 
@@ -92,7 +92,7 @@ cp ninux.yml.example ninux.yml
 # 3. Modifica org, versione OpenWrt e configurazione openwisp
 nano ninux.yml
 
-# 4. Genera le password cifrati (shared_secret, credenziali OpenWISP)
+# 4. Genera le password cifrate (shared_secret, credenziali OpenWISP)
 #    Vedi sezione "Gestione segreti con ansible-vault"
 
 # 5. Verifica i device disponibili
