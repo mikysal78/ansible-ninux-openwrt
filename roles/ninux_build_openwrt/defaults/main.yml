@@ -9,7 +9,7 @@
 
 openwrt_version: "v25.12.4"
 openwrt_target: "glinet_gl-mt300n-v2"
-openwrt_org: "basilicata"
+openwrt_org: "default"
 openwrt_captive_portal: false
 openwrt_vpn: "NO"
 openwrt_build_user: "{{ ansible_user_id }}"

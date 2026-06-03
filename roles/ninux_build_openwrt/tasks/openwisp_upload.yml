@@ -1,69 +1,98 @@
 ---
 # tasks/openwisp_upload.yml
 #
-# Carica i firmware compilati su OpenWISP Firmware Upgrader via REST API.
+# Carica i firmware sysupgrade su OpenWISP Firmware Upgrader via REST API.
 #
 # Flusso:
-#   1. Recupera o crea la Category per l'org
-#   2. Crea un nuovo Build (versione OpenWrt + variante)
-#   3. Carica ogni file sysupgrade/factory come Image del Build
-#   4. (opzionale) Avvia batch upgrade su tutti i device associati
-#
-# Incluso da artifacts.yml se openwisp_upload_enabled: true
+#   1. Autenticazione → token Bearer
+#   2. Recupera UUID organizzazione (se non definito, cerca per slug)
+#   3. Cerca o crea Category (per org + device target)
+#   4. Crea Build (versione + variante VPN/CP)
+#   5. Carica ogni file sysupgrade come Image
+#   6. (opzionale) Avvia batch upgrade
 
-# ---- 1. Autenticazione - ottieni token ----------------------------
-- name: Ottieni token OpenWISP
-  ansible.builtin.uri:
-    url: "{{ openwisp_url }}/api/v1/users/token/"
-    method: POST
-    body_format: json
-    body:
-      username: "{{ openwisp_username }}"
-      password: "{{ openwisp_password }}"
-    status_code: 200
-  register: _ow_auth
+# ---- 1. Token ---------------------------------------------------
+- name: "[OpenWISP] Imposta token"
+  ansible.builtin.set_fact:
+    _ow_token: "{{ _ow_token_global }}"
   no_log: true
 
-- name: Imposta header di autenticazione
-  ansible.builtin.set_fact:
-    _ow_headers:
-      Authorization: "Bearer {{ _ow_auth.json.token }}"
-      Accept: "application/json"
-
-# ---- 2. Cerca/crea Category --------------------------------------
-- name: Cerca category esistente per org
+# ---- 2. Risolvi UUID organizzazione ------------------------------
+- name: "[OpenWISP] Cerca organizzazione per slug"
   ansible.builtin.uri:
-    url: "{{ openwisp_url }}/api/v1/firmware-upgrader/category/?organization={{ openwisp_org_slug }}"
+    url: "{{ openwisp_url }}/api/v1/users/organization/?slug={{ openwisp_org_slug }}"
     method: GET
-    headers: "{{ _ow_headers }}"
+    headers:
+      Authorization: "Bearer {{ _ow_token }}"
+    status_code: 200
+  register: _ow_orgs
+  when: openwisp_org_id | string | length < 10
+
+- name: "[OpenWISP] Risolvi UUID org da slug"
+  ansible.builtin.set_fact:
+    _ow_org_id: >-
+      {{
+        _ow_orgs.json.results[0].id
+        if (_ow_orgs is not skipped and _ow_orgs.json.count > 0)
+        else openwisp_org_id | string
+      }}
+  when: openwisp_org_id | string | length < 10
+
+- name: "[OpenWISP] Usa UUID org da ninux.yml"
+  ansible.builtin.set_fact:
+    _ow_org_id: "{{ openwisp_org_id | string }}"
+  when: openwisp_org_id | string | length >= 10
+
+- name: "[OpenWISP] Verifica UUID org"
+  ansible.builtin.assert:
+    that:
+      - _ow_org_id is defined
+      - _ow_org_id | length >= 10
+    fail_msg: >
+      Impossibile determinare UUID organizzazione OpenWISP.
+      Definisci openwisp_org_id in ninux.yml (cifrato con encrypt_string)
+      oppure verifica che openwisp_org_slug='{{ openwisp_org_slug }}' esista.
+
+# ---- 3. Cerca o crea Category ------------------------------------
+- name: "[OpenWISP] Calcola nome category"
+  ansible.builtin.set_fact:
+    _ow_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"
+
+- name: "[OpenWISP] Cerca category esistente"
+  ansible.builtin.uri:
+    url: "{{ openwisp_url }}/api/v1/firmware-upgrader/category/"
+    method: GET
+    headers:
+      Authorization: "Bearer {{ _ow_token }}"
     status_code: 200
   register: _ow_categories
 
-- name: Filtra category per nome
+- name: "[OpenWISP] Filtra category per nome e org"
   ansible.builtin.set_fact:
     _ow_category: >-
       {{
         _ow_categories.json.results
-        | selectattr('name', 'equalto', openwisp_category_name)
-        | list
-        | first
-        | default({})
+        | selectattr('name', 'equalto', _ow_category_name)
+        | selectattr('organization', 'equalto', _ow_org_id)
+        | list | first | default({})
       }}
 
-- name: Crea category se non esiste
+- name: "[OpenWISP] Crea category se non esiste"
   ansible.builtin.uri:
     url: "{{ openwisp_url }}/api/v1/firmware-upgrader/category/"
     method: POST
-    headers: "{{ _ow_headers }}"
+    headers:
+      Authorization: "Bearer {{ _ow_token }}"
+      Content-Type: "application/json"
     body_format: json
     body:
-      name: "{{ openwisp_category_name }}"
-      organization: "{{ openwisp_org_id }}"
+      name: "{{ _ow_category_name }}"
+      organization: "{{ _ow_org_id }}"
     status_code: 201
   register: _ow_category_created
   when: _ow_category | length == 0
 
-- name: Imposta ID category
+- name: "[OpenWISP] Imposta ID category"
   ansible.builtin.set_fact:
     _ow_category_id: >-
       {{
@@ -72,129 +101,159 @@
         else _ow_category_created.json.id
       }}
 
-# ---- 3. Crea Build -----------------------------------------------
-- name: Calcola nome build
+- name: "[OpenWISP] Category: {{ _ow_category_name }} ({{ _ow_category_id }})"
+  ansible.builtin.debug:
+    msg: "Category: {{ _ow_category_name }} → {{ _ow_category_id }}"
+
+# ---- 4. Calcola nome build e crea Build --------------------------
+- name: "[OpenWISP] Calcola versione build"
   ansible.builtin.set_fact:
     _ow_build_version: >-
       {{
-        openwrt_version + '-' + openwrt_target + '-' +
-        ('CP-' if openwrt_captive_portal | bool else '') +
-        'VPN-' + openwrt_vpn
+        openwrt_version ~ '-' ~ openwrt_target ~ '-' ~
+        ('CP-' if openwrt_captive_portal | bool else '') ~
+        'VPN-' ~ openwrt_vpn
       }}
 
-- name: Cerca build esistente con stessa versione
+- name: "[OpenWISP] Cerca build esistente"
   ansible.builtin.uri:
-    url: "{{ openwisp_url }}/api/v1/firmware-upgrader/build/?version={{ _ow_build_version | urlencode }}&category={{ _ow_category_id }}"
+    url: "{{ openwisp_url }}/api/v1/firmware-upgrader/build/?category={{ _ow_category_id }}"
     method: GET
-    headers: "{{ _ow_headers }}"
+    headers:
+      Authorization: "Bearer {{ _ow_token }}"
     status_code: 200
   register: _ow_builds
 
-- name: Crea nuovo Build
+- name: "[OpenWISP] Filtra build per versione"
+  ansible.builtin.set_fact:
+    _ow_existing_build: >-
+      {{
+        _ow_builds.json.results
+        | selectattr('version', 'equalto', _ow_build_version)
+        | list | first | default({})
+      }}
+
+- name: "[OpenWISP] Crea nuovo Build"
   ansible.builtin.uri:
     url: "{{ openwisp_url }}/api/v1/firmware-upgrader/build/"
     method: POST
-    headers: "{{ _ow_headers }}"
+    headers:
+      Authorization: "Bearer {{ _ow_token }}"
+      Content-Type: "application/json"
     body_format: json
     body:
       category: "{{ _ow_category_id }}"
       version: "{{ _ow_build_version }}"
       changelog: >-
-        Build automatica da Jenkins.
+        Build automatica Jenkins.
         Org={{ openwrt_org }} Target={{ openwrt_target }}
         VPN={{ openwrt_vpn }} CP={{ openwrt_captive_portal }}
+        Data={{ ansible_date_time.iso8601 }}
     status_code: 201
   register: _ow_build_created
-  when: _ow_builds.json.count == 0
+  when: _ow_existing_build | length == 0
 
-- name: Imposta ID build
+- name: "[OpenWISP] Imposta ID build"
   ansible.builtin.set_fact:
     _ow_build_id: >-
       {{
-        _ow_builds.json.results[0].id
-        if _ow_builds.json.count > 0
+        _ow_existing_build.id
+        if _ow_existing_build | length > 0
         else _ow_build_created.json.id
       }}
 
-- name: Build ID OpenWISP
+- name: "[OpenWISP] Build: {{ _ow_build_version }} ({{ _ow_build_id }})"
   ansible.builtin.debug:
-    msg: "Build ID: {{ _ow_build_id }} ({{ _ow_build_version }})"
+    msg: >-
+      Build: {{ _ow_build_version }} → {{ _ow_build_id }}
+      {{ '(esistente)' if _ow_existing_build | length > 0 else '(nuova)' }}
 
-# ---- 4. Trova i file da caricare ---------------------------------
-- name: Cerca file firmware da caricare (sysupgrade + factory)
+# ---- 5. Trova file sysupgrade ------------------------------------
+- name: "[OpenWISP] Cerca file sysupgrade"
   ansible.builtin.find:
     paths: "{{ _artifact_local }}"
     patterns:
       - "*-sysupgrade.bin"
-      - "*-factory.bin"
-      - "*.img.gz"
+      - "*-sysupgrade.img.gz"
+      - "*-sysupgrade.img"
+      - "*squashfs-combined-efi.img.gz"
     file_type: file
-  register: _ow_firmware_files
+  register: _ow_sysupgrade_files
 
-- name: Avverti se nessun firmware trovato
+- name: "[OpenWISP] File trovati per upload"
   ansible.builtin.debug:
-    msg: "WARN: nessun file firmware trovato in {{ _artifact_local }}, upload saltato"
-  when: _ow_firmware_files.files | length == 0
+    msg: "{{ _ow_sysupgrade_files.files | map(attribute='path') | map('basename') | list }}"
+  when: _ow_sysupgrade_files.files | length > 0
 
-# ---- 5. Carica immagini ------------------------------------------
-- name: Carica firmware images su OpenWISP
-  ansible.builtin.uri:
-    url: "{{ openwisp_url }}/api/v1/firmware-upgrader/build/{{ _ow_build_id }}/image/"
-    method: POST
-    headers:
-      Authorization: "Bearer {{ _ow_auth.json.token }}"
-    body_format: form-multipart
-    body:
-      file:
-        filename: "{{ item.path | basename }}"
-        content: "{{ lookup('file', item.path, rstrip=false) | b64encode }}"
-        mime_type: "application/octet-stream"
-      type: "{{ item.path | basename | regex_replace('^.*-sysupgrade.*$', 'sysupgrade') | regex_replace('^.*-factory.*$', 'factory') | default('other') }}"
-    status_code: [201, 400]  # 400 = image già esistente
-  loop: "{{ _ow_firmware_files.files }}"
-  loop_control:
-    label: "{{ item.path | basename }}"
-  register: _ow_uploads
-  when: _ow_firmware_files.files | length > 0
-
-- name: Riepilogo upload
+# ---- 6. Carica immagini con curl (gestisce binario correttamente) --
+- name: "[OpenWISP] Avviso se nessun sysupgrade trovato"
   ansible.builtin.debug:
     msg: >-
-      Caricati {{ _ow_uploads.results | selectattr('status', 'equalto', 201) | list | length }}
-      firmware su OpenWISP Build {{ _ow_build_id }}
-  when: _ow_firmware_files.files | length > 0
+      ATTENZIONE: nessun file sysupgrade trovato in {{ _artifact_local }}.
+      Upload saltato per questa variante.
+  when: _ow_sysupgrade_files.files | length == 0
 
-# ---- 6. Batch upgrade (opzionale) --------------------------------
-- name: Dry-run batch upgrade (preview device da aggiornare)
+- name: "[OpenWISP] Carica sysupgrade"
+  ansible.builtin.command:
+    cmd: >-
+      curl -s -o /tmp/ow_upload_response.json -w "%{http_code}"
+      -X POST
+      -H "Authorization: Bearer {{ _ow_token }}"
+      -F "file=@{{ item.path }}"
+      -F "type={{ item.path | basename | regex_replace('^openwrt-', '') }}"
+      {{ openwisp_url }}/api/v1/firmware-upgrader/build/{{ _ow_build_id }}/image/
+  register: _ow_upload_result
+  changed_when: _ow_upload_result.stdout | int == 201
+  failed_when: _ow_upload_result.stdout | int not in [201, 400]
+  loop: "{{ _ow_sysupgrade_files.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  when: _ow_sysupgrade_files.files | length > 0
+  no_log: true
+
+- name: "[OpenWISP] Riepilogo upload"
+  ansible.builtin.debug:
+    msg: >-
+      Caricati {{ _ow_upload_result.results
+        | selectattr('stdout', 'equalto', '201') | list | length }}
+      sysupgrade su Build {{ _ow_build_id }}
+      ({{ _ow_upload_result.results
+        | selectattr('stdout', 'equalto', '400') | list | length }} già presenti)
+  when: _ow_sysupgrade_files.files | length > 0
+
+# ---- 7. Batch upgrade (opzionale) --------------------------------
+- name: "[OpenWISP] Preview device da aggiornare"
   ansible.builtin.uri:
     url: "{{ openwisp_url }}/api/v1/firmware-upgrader/build/{{ _ow_build_id }}/upgrade/"
     method: GET
-    headers: "{{ _ow_headers }}"
+    headers:
+      Authorization: "Bearer {{ _ow_token }}"
     status_code: 200
   register: _ow_upgrade_preview
   when: openwisp_trigger_upgrade | bool
 
-- name: Mostra device che verranno aggiornati
+- name: "[OpenWISP] Device che verranno aggiornati: {{ _ow_upgrade_preview.json | length | default(0) }}"
   ansible.builtin.debug:
-    msg: "Device da aggiornare: {{ _ow_upgrade_preview.json | length }}"
+    msg: "{{ _ow_upgrade_preview.json | length }} device da aggiornare"
   when: openwisp_trigger_upgrade | bool
 
-- name: Avvia batch upgrade
+- name: "[OpenWISP] Avvia batch upgrade"
   ansible.builtin.uri:
     url: "{{ openwisp_url }}/api/v1/firmware-upgrader/build/{{ _ow_build_id }}/upgrade/"
     method: POST
-    headers: "{{ _ow_headers }}"
+    headers:
+      Authorization: "Bearer {{ _ow_token }}"
+      Content-Type: "application/json"
     body_format: json
     body: "{{ {} | combine({'group': openwisp_upgrade_group} if openwisp_upgrade_group else {}) }}"
     status_code: 200
-  register: _ow_upgrade
   when:
     - openwisp_trigger_upgrade | bool
     - _ow_upgrade_preview.json | length > 0
 
-- name: Batch upgrade avviato
+- name: "[OpenWISP] Batch upgrade avviato"
   ansible.builtin.debug:
-    msg: "Batch upgrade avviato. Monitora su {{ openwisp_url }}/firmware-upgrader/batchupgradeoperation/"
+    msg: "Monitora su {{ openwisp_url }}/firmware-upgrader/batchupgradeoperation/"
   when:
     - openwisp_trigger_upgrade | bool
     - _ow_upgrade_preview.json | length > 0

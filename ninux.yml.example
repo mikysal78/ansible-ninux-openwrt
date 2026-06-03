@@ -27,7 +27,7 @@
 openwrt_version: "v25.12.4"
 
 # Organizzazione Ninux attiva — corrisponde a config/organizations/<org>/
-openwrt_org: "basilicata"
+openwrt_org: "default"
 
 # Varianti VPN da compilare per ogni device
 # Valori possibili: NO, ZeroTier, WireGuard, DualVPN
@@ -55,37 +55,30 @@ openwrt_cp_variants: true
 # -----------------------------------------------------------------------------
 
 openwisp_orgs:
-  basilicata:
+  default:
     controller_url: "https://controller.nnxx.ninux.org"
     management_interface: "owz12345"
     shared_secret: !vault |
           $ANSIBLE_VAULT;1.1;AES256
-          # PLACEHOLDER — sostituire con output di encrypt_string
+          # PLACEHOLDER — ansible-vault encrypt_string ... 'LA_SECRET' --name 'shared_secret'
+    api_token: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          # PLACEHOLDER — Token API utente OpenWISP per org default
+          # Admin OpenWISP → Users → <utente org> → API Keys
+          # ansible-vault encrypt_string ... 'IL_TOKEN' --name 'api_token'
   # roma:
   #   controller_url: "https://controller.nnxx.ninux.org"
   #   management_interface: "owzABCDE"
   #   shared_secret: !vault |
   #         $ANSIBLE_VAULT;1.1;AES256
-  #         # PLACEHOLDER — sostituire con output di encrypt_string
-  # torino:
-  #   controller_url: "https://controller.nnxx.ninux.org"
-  #   management_interface: "owzXYZWW"
-  #   shared_secret: !vault |
+  #         # PLACEHOLDER
+  #   api_token: !vault |
   #         $ANSIBLE_VAULT;1.1;AES256
-  #         # PLACEHOLDER — sostituire con output di encrypt_string
+  #         # PLACEHOLDER
 
 
 # -----------------------------------------------------------------------------
 # OPENWISP Firmware Upgrader — Upload automatico dopo la build
-#
-# Per generare username e password cifrati:
-#   ansible-vault encrypt_string \
-#     --vault-password-file /var/lib/jenkins/.vault_pass \
-#     'IL_TUO_USERNAME' --name 'openwisp_username'
-#
-#   ansible-vault encrypt_string \
-#     --vault-password-file /var/lib/jenkins/.vault_pass \
-#     'LA_TUA_PASSWORD' --name 'openwisp_password'
 # -----------------------------------------------------------------------------
 
 # Abilita upload automatico su OpenWISP dopo la build
@@ -94,17 +87,17 @@ openwisp_upload_enabled: false
 # URL base dell'istanza OpenWISP Firmware Upgrader (es. https://openwisp.example.org)
 openwisp_url: ""
 
-# Credenziali API OpenWISP Firmware Upgrader (cifrate con encrypt_string)
-openwisp_username: !vault |
-      $ANSIBLE_VAULT;1.1;AES256
-      # PLACEHOLDER — sostituire con output di encrypt_string
-openwisp_password: !vault |
-      $ANSIBLE_VAULT;1.1;AES256
-      # PLACEHOLDER — sostituire con output di encrypt_string
+# Slug dell'organizzazione OpenWISP (nome breve, es. "default")
+# NON necessariamente uguale a openwrt_org
+openwisp_org_slug: "default"
 
-# Slug e UUID dell'organizzazione OpenWISP
-openwisp_org_slug: "{{ openwrt_org }}"
-openwisp_org_id: ""
+# UUID dell'organizzazione OpenWISP (cifrato con encrypt_string)
+# Recuperabile da: Admin OpenWISP → Organizations → <org> → URL
+# ansible-vault encrypt_string --vault-password-file /var/lib/jenkins/.vault_pass \
+#   'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' --name 'openwisp_org_id'
+openwisp_org_id: !vault |
+      $ANSIBLE_VAULT;1.1;AES256
+      # PLACEHOLDER — sostituire con output di encrypt_string
 
 # Nome della category firmware in OpenWISP
 openwisp_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"

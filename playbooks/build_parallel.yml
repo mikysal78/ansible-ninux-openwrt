@@ -12,7 +12,7 @@
 #
 # Usage:
 #   ansible-playbook playbooks/build_parallel.yml \
-#     -e openwrt_org=basilicata \
+#     -e openwrt_org=default \
 #     -e parallel_builds=2
 
 - name: Build parallela per device

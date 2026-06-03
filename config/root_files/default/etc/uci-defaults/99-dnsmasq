@@ -1,0 +1,29 @@
+#!/bin/sh
+
+if ! uci -q show dhcp.@dnsmasq[0].notinterface
+then
+    uci add_list dhcp.@dnsmasq[0].notinterface='pppoe-wan'
+    uci commit dhcp
+fi
+
+if ! uci -q show dhcp.@dnsmasq[0].server
+then
+    uci add_list dhcp.@dnsmasq[0].server='/nnxx/51.77.211.116'
+    uci add_list dhcp.@dnsmasq[0].server='/nnxx/195.32.70.193'
+    uci add_list dhcp.@dnsmasq[0].server='1.1.1.1'
+    uci add_list dhcp.@dnsmasq[0].server='8.8.8.8'
+    uci add_list dhcp.@dnsmasq[0].server='2606:4700:4700::1111'
+    uci commit dhcp
+fi
+
+# Abilita a risolvere i domini da locale
+if ! uci -q show dhcp.@dnsmasq[0].rebind_domain
+then
+    uci add_list dhcp.@dnsmasq[0].rebind_domain='controller.nnxx.ninux.org'
+    uci add_list dhcp.@dnsmasq[0].rebind_domain='openwisp.nnxx.ninux.org'
+    uci add_list dhcp.@dnsmasq[0].rebind_domain='wifiauth.nnxx.ninux.org'
+    uci add_list dhcp.@dnsmasq[0].rebind_domain='wifi.nnxx.ninux.org'
+    uci commit dhcp
+fi
+
+
