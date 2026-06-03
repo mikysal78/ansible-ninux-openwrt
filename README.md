@@ -11,7 +11,7 @@ Sistema di build automatizzato per firmware **OpenWrt** per i nodi della rete me
 3. [Installazione Jenkins su Debian Trixie](#installazione-jenkins-su-debian-trixie)
 4. [Configurazione Jenkins](#configurazione-jenkins)
 5. [Configurazione del build](#configurazione-del-build)
-6. [Gestione segreti con ansible-vault](#gestione-segreti-con-ansible-vault)
+6. [Gestione password con ansible-vault](#gestione-password-con-ansible-vault)
 7. [Aggiungere device e organizzazioni](#aggiungere-device-e-organizzazioni)
 8. [Uso da riga di comando](#uso-da-riga-di-comando)
 9. [Performance e ottimizzazioni](#performance-e-ottimizzazioni)
@@ -93,7 +93,7 @@ cp ninux.yml.example ninux.yml
 nano ninux.yml
 
 # 4. Genera le password cifrate (shared_secret, credenziali OpenWISP)
-#    Vedi sezione "Gestione segreti con ansible-vault"
+#    Vedi sezione "Gestione password con ansible-vault"
 
 # 5. Verifica i device disponibili
 ls config/organizations/default/
@@ -333,9 +333,9 @@ openwrt_tmpfs_size: "8G"
 
 ---
 
-## Gestione segreti con ansible-vault
+## Gestione password con ansible-vault
 
-I segreti (shared_secret openwisp, credenziali Firmware Upgrader) sono cifrati
+I password (shared_secret openwisp, credenziali Firmware Upgrader) sono cifrati
 **inline in `ninux.yml`** con `ansible-vault encrypt_string`. Non esiste un vault
 file separato — tutto sta in un file solo, i valori sensibili sono illeggibili
 senza la vault password.
