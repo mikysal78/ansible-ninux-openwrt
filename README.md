@@ -75,7 +75,7 @@ ansible-ninux-openwrt/
 ```
 
 **Il file principale da modificare è `ninux.yml`** — contiene tutte le variabili di build,
-la configurazione openwisp-config per organizzazione e i password cifrati inline con `ansible-vault encrypt_string`.
+la configurazione openwisp-config per organizzazione e le password cifrate inline con `ansible-vault encrypt_string`.
 
 ---
 
@@ -92,7 +92,7 @@ cp ninux.yml.example ninux.yml
 # 3. Modifica org, versione OpenWrt e configurazione openwisp
 nano ninux.yml
 
-# 4. Genera i password cifrati (shared_secret, credenziali OpenWISP)
+# 4. Genera le password cifrate (shared_secret, credenziali OpenWISP)
 #    Vedi sezione "Gestione password con ansible-vault"
 
 # 5. Verifica i device disponibili
@@ -129,7 +129,7 @@ git clone https://github.com/mikysal78/ansible-ninux-openwrt.git
 cd ansible-ninux-openwrt
 sudo ./setup/install-jenkins.sh
 
-# Con vault password per i password openwisp
+# Con vault password per le password openwisp
 sudo ./setup/install-jenkins.sh --vault-pass "mia-password-vault"
 
 # Solo dipendenze, Jenkins già installato
@@ -288,7 +288,7 @@ Pipeline e Git sono già inclusi nei plugin suggeriti.
 ### 6. Vault password file
 
 ```bash
-# Sul server Jenkins — necessario per decifrare i password in ninux.yml
+# Sul server Jenkins — necessario per decifrare le password in ninux.yml
 echo "mia-password-vault" > /var/lib/jenkins/.vault_pass
 chmod 600 /var/lib/jenkins/.vault_pass
 chown jenkins:jenkins /var/lib/jenkins/.vault_pass
