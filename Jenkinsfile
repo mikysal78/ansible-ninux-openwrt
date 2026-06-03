@@ -206,7 +206,6 @@ Workspace : ${WORKSPACE}
                     withCredentials([string(credentialsId: 'github-release-token', variable: 'GH_TOKEN')]) {
                         def version = params.OPENWRT_VERSION
                         def org     = params.OPENWRT_ORG
-                        def tag     = "${version}-${org}-build${env.BUILD_NUMBER}"
                         def repo    = sh(
                             script: "grep -E '^github_repo:' ${WORKSPACE}/ninux.yml | awk '{print \$2}' | tr -d '\"'",
                             returnStdout: true
@@ -220,56 +219,102 @@ Workspace : ${WORKSPACE}
                             returnStdout: true
                         ).trim()
 
-                        // Crea release via API GitHub
-                        def notes = "Build automatica Jenkins #${env.BUILD_NUMBER}" +
-                                    " | Org: ${org}" +
-                                    " | OpenWrt: ${version}" +
-                                    " | VPN: ${params.VPN_VARIANTS}" +
-                                    " | CP: ${params.CAPTIVE_PORTAL_VARIANTS}"
-
-                        def createScript = """
-curl -sf -X POST \\
-  -H "Authorization: Bearer \$GH_TOKEN" \\
-  -H "Content-Type: application/json" \\
-  -d '{"tag_name":"${tag}","name":"Ninux OpenWrt ${version} - ${org} #${env.BUILD_NUMBER}","body":"${notes}","draft":false,"prerelease":${prerel}}' \\
-  "https://api.github.com/repos/${repo}/releases" \\
-| python3 -c "import sys,json; print(json.load(sys.stdin)['id'])"
-"""
-                        def releaseId = sh(script: createScript, returnStdout: true).trim()
-                        echo "Release creata: ID=${releaseId}  tag=${tag}"
-
-                        // Upload assets
-                        def shaFilter = inclSha == 'true' ? "-o -name 'sha256sums'" : ""
-                        def files = sh(
-                            script: "find ${WORKSPACE}/output -type f \\( -name '*.bin' -o -name '*.img.gz' ${shaFilter} \\) | sort",
+                        // Trova tutti i device (sottodirectory di output/<version>/<org>/)
+                        def devicesRaw = sh(
+                            script: "find ${WORKSPACE}/output/${version}/${org} -mindepth 1 -maxdepth 1 -type d | sort",
                             returnStdout: true
                         ).trim()
 
-                        if (!files) { echo "Nessun firmware trovato per upload GitHub"; return }
-
-                        files.split('\n').each { fp ->
-                            fp = fp.trim()
-                            if (!fp) return
-                            def assetName = fp
-                                .replace("${WORKSPACE}/output/${version}/${org}/", '')
-                                .replaceAll('/', '_')
-                            def code = sh(
-                                script: """curl -s -o /dev/null -w "%{http_code}" \\
-  -X POST \\
-  -H "Authorization: Bearer \$GH_TOKEN" \\
-  -H "Content-Type: application/octet-stream" \\
-  --data-binary @"${fp}" \\
-  "https://uploads.github.com/repos/${repo}/releases/${releaseId}/assets?name=${assetName}" """,
-                                returnStdout: true
-                            ).trim()
-                            echo "${code == '201' ? '[OK]' : '[WARN ' + code + ']'} ${assetName}"
+                        if (!devicesRaw) {
+                            echo "Nessuna directory device trovata in output/${version}/${org}"
+                            return
                         }
 
-                        echo "Release: https://github.com/${repo}/releases/tag/${tag}"
+                        devicesRaw.split('\n').each { deviceDir ->
+                            deviceDir = deviceDir.trim()
+                            if (!deviceDir) return
+                            def device = deviceDir.tokenize('/').last()
+
+                            // Tag: v25.12.4-default-x86_64
+                            def tag = "${version}-${org}-${device}"
+
+                            // Varianti presenti nel device
+                            def variantsRaw = sh(
+                                script: "find ${deviceDir} -mindepth 2 -maxdepth 2 -type d | sort | xargs -I{} basename {} 2>/dev/null | sort -u",
+                                returnStdout: true
+                            ).trim()
+                            def variants = variantsRaw ? variantsRaw.replaceAll('\n', ', ') : 'n/a'
+
+                            def notes = "Build Jenkins #${env.BUILD_NUMBER}\\nOrg: ${org}\\nOpenWrt: ${version}\\nDevice: ${device}\\nVarianti: ${variants}"
+
+                            // Crea release per questo device via python3 per gestire JSON
+                            def releaseId = sh(
+                                script: """python3 -c "
+import urllib.request, json, os, sys
+data = json.dumps({
+    'tag_name': '${tag}',
+    'name': 'Ninux OpenWrt ${version} | ${org} | ${device}',
+    'body': '${notes}',
+    'draft': False,
+    'prerelease': '${prerel}' == 'true'
+}).encode()
+req = urllib.request.Request(
+    'https://api.github.com/repos/${repo}/releases',
+    data=data,
+    headers={
+        'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+        'Content-Type': 'application/json'
+    }
+)
+resp = urllib.request.urlopen(req)
+print(json.loads(resp.read())['id'])
+" """,
+                                returnStdout: true
+                            ).trim()
+
+                            echo "Release creata: ${tag}  (ID=${releaseId})"
+
+                            // Upload firmware di questo device
+                            // Struttura asset: Standard__VPN-NO__openwrt-x86-64-...-efi.img.gz
+                            def shaArg = inclSha == 'true' ? "-o -name 'sha256sums'" : ""
+                            def files = sh(
+                                script: "find ${deviceDir} -type f \\( -name '*.bin' -o -name '*.img.gz' ${shaArg} \\) | sort",
+                                returnStdout: true
+                            ).trim()
+
+                            if (!files) {
+                                echo "Nessun firmware trovato per ${device}"
+                                return
+                            }
+
+                            files.split('\n').each { fp ->
+                                fp = fp.trim()
+                                if (!fp) return
+
+                                // Es: Standard__VPN-NO__openwrt-x86-64-generic-squashfs-combined-efi.img.gz
+                                def assetName = fp
+                                    .replace("${deviceDir}/", '')
+                                    .replaceAll('/', '__')
+
+                                def code = sh(
+                                    script: """curl -s -o /dev/null -w "%{http_code}" \
+  -X POST \
+  -H "Authorization: Bearer \$GH_TOKEN" \
+  -H "Content-Type: application/octet-stream" \
+  --data-binary @"${fp}" \
+  "https://uploads.github.com/repos/${repo}/releases/${releaseId}/assets?name=${assetName}" """,
+                                    returnStdout: true
+                                ).trim()
+                                echo "${code == '201' ? '[OK]' : '[WARN ' + code + ']'} ${assetName}"
+                            }
+
+                            echo "→ https://github.com/${repo}/releases/tag/${tag}"
+                        }
                     }
                 }
             }
         }
+
 
         stage('Disk & RAM (after)') {
             steps {
