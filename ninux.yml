@@ -123,6 +123,29 @@ openwisp_upgrade_group: ""
 
 
 # -----------------------------------------------------------------------------
+# GITHUB RELEASE — Pubblicazione firmware come release GitHub
+#
+# Prerequisiti:
+#   1. Personal Access Token GitHub con permesso Contents: Read and Write
+#      su https://github.com/settings/tokens
+#   2. Token salvato in Jenkins → Manage Jenkins → Credentials
+#      Kind: Secret text  |  ID: github-release-token
+# -----------------------------------------------------------------------------
+
+# Abilita creazione release GitHub dopo la build
+github_release_enabled: false
+
+# Repository GitHub (owner/repo)
+github_repo: "mikysal78/ansible-ninux-openwrt"
+
+# Crea come pre-release (consigliato durante i test)
+github_prerelease: false
+
+# Includi file sha256sums come asset della release
+github_release_include_sha256: true
+
+
+# -----------------------------------------------------------------------------
 # PERFORMANCE — ccache
 # -----------------------------------------------------------------------------
 
