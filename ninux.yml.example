@@ -56,7 +56,7 @@ openwrt_cp_variants: true
 
 openwisp_orgs:
   default:
-    controller_url: "https://controller.nnxx.ninux.org"
+    controller_url: "https://openwisp.ninux-nnxx.it"
     management_interface: "owz12345"
     shared_secret: !vault |
           $ANSIBLE_VAULT;1.1;AES256
@@ -67,7 +67,7 @@ openwisp_orgs:
           # Admin OpenWISP → Users → <utente org> → API Keys
           # ansible-vault encrypt_string ... 'IL_TOKEN' --name 'api_token'
   # roma:
-  #   controller_url: "https://controller.nnxx.ninux.org"
+  #   controller_url: "https://openwisp.ninux-nnxx.it"
   #   management_interface: "owzABCDE"
   #   shared_secret: !vault |
   #         $ANSIBLE_VAULT;1.1;AES256

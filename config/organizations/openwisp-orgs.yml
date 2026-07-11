@@ -15,7 +15,7 @@
 #
 # Esempio per aggiungere una nuova org:
 #   nuovaorg:
-#     controller_url: "https://controller.nnxx.ninux.org"
+#     controller_url: "https://openwisp.ninux-nnxx.it"
 #     management_interface: "owzNUOVA"
 #   Poi in inventory/vault.yml aggiungere:
 #     vault_openwisp_secrets:
@@ -23,5 +23,5 @@
 
 openwisp_orgs:
   basilicata:
-    controller_url: "https://controller.nnxx.ninux.org"
+    controller_url: "https://openwisp.ninux-nnxx.it"
     management_interface: "owzt0d3e97"

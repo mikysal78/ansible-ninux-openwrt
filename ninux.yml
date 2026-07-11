@@ -56,7 +56,7 @@ openwrt_cp_variants: true
 
 openwisp_orgs:
   default:
-    controller_url: "https://controller.nnxx.ninux.org"
+    controller_url: "https://openwisp.ninux-nnxx.it"
     management_interface: "owzt0d3e97"
     shared_secret: !vault |
           $ANSIBLE_VAULT;1.1;AES256
@@ -75,7 +75,7 @@ openwisp_orgs:
           6636636231333266363661326464653634333266306261316561
 
   # roma:
-  #   controller_url: "https://controller.nnxx.ninux.org"
+  #   controller_url: "https://openwisp.ninux-nnxx.it"
   #   management_interface: "owzABCDE"
   #   shared_secret: !vault |
   #         $ANSIBLE_VAULT;1.1;AES256
@@ -93,7 +93,7 @@ openwisp_orgs:
 openwisp_upload_enabled: true
 
 # URL base dell'istanza OpenWISP Firmware Upgrader (es. https://openwisp.example.org)
-openwisp_url: "https://controller.nnxx.ninux.org"
+openwisp_url: "https://openwisp.ninux-nnxx.it"
 
 # Slug dell'organizzazione OpenWISP (nome breve, es. "default")
 # NON necessariamente uguale a openwrt_org

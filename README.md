@@ -319,7 +319,7 @@ openwrt_cp_variants: false
 # openwisp-config per org (shared_secret cifrata con encrypt_string)
 openwisp_orgs:
   default:
-    controller_url: "https://controller.nnxx.ninux.org"
+    controller_url: "https://openwisp.ninux-nnxx.it"
     management_interface: "owz12345"
     shared_secret: !vault |
           $ANSIBLE_VAULT;1.1;AES256
@@ -372,7 +372,7 @@ Output da incollare in `ninux.yml`:
 ```yaml
 openwisp_orgs:
   roma:
-    controller_url: "https://controller.nnxx.ninux.org"
+    controller_url: "https://openwisp.ninux-nnxx.it"
     management_interface: "owzABCDE"
     shared_secret: !vault |
           $ANSIBLE_VAULT;1.1;AES256
@@ -433,7 +433,7 @@ cp config/organizations/default/*.config config/organizations/roma/
 nano ninux.yml
 # openwisp_orgs:
 #   roma:
-#     controller_url: "https://controller.nnxx.ninux.org"
+#     controller_url: "https://openwisp.ninux-nnxx.it"
 #     management_interface: "owzABCDE"
 #     shared_secret: !vault | ...
 
@@ -539,7 +539,7 @@ In `ninux.yml`:
 
 ```yaml
 openwisp_upload_enabled: true
-openwisp_url: "https://controller.nnxx.ninux.org"
+openwisp_url: "https://openwisp.ninux-nnxx.it"
 openwisp_org_slug: "default"
 openwisp_org_id: !vault |
       $ANSIBLE_VAULT;1.1;AES256
@@ -548,7 +548,7 @@ openwisp_trigger_upgrade: false   # true = avvia upgrade automatico
 
 openwisp_orgs:
   default:
-    controller_url: "https://controller.nnxx.ninux.org"
+    controller_url: "https://openwisp.ninux-nnxx.it"
     management_interface: "owzXXXXX"
     shared_secret: !vault |
           $ANSIBLE_VAULT;1.1;AES256
