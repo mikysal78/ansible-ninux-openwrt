@@ -20,10 +20,7 @@ fi
 if ! uci -q show dhcp.@dnsmasq[0].rebind_domain
 then
     uci add_list dhcp.@dnsmasq[0].rebind_domain='ninux-nnxx.it'
-    uci add_list dhcp.@dnsmasq[0].rebind_domain='controller.nnxx.ninux.org'
-    uci add_list dhcp.@dnsmasq[0].rebind_domain='openwisp.nnxx.ninux.org'
-    uci add_list dhcp.@dnsmasq[0].rebind_domain='wifiauth.nnxx.ninux.org'
-    uci add_list dhcp.@dnsmasq[0].rebind_domain='wifi.nnxx.ninux.org'
+    uci add_list dhcp.@dnsmasq[0].rebind_domain='nnxx.ninux.org'
     uci commit dhcp
 fi
 
