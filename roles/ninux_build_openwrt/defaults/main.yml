@@ -11,6 +11,11 @@ openwrt_version: "v25.12.5"
 openwrt_target: "glinet_gl-mt300n-v2"
 openwrt_org: "default"
 openwrt_captive_portal: false
+# Motore Captive Portal della singola build: chilli | uspot (mai insieme)
+openwrt_cp_engine: "chilli"
+# Motori CP per cui generare una build separata quando openwrt_cp_variants: true
+openwrt_cp_engines:
+  - "chilli"
 openwrt_vpn: "NO"
 openwrt_build_user: "{{ ansible_user_id }}"
 

@@ -1,19 +1,26 @@
 ---
 # tasks/artifacts.yml - Copia firmware in output/ e su NFS
 
+- name: Calcola nome variante Captive Portal
+  ansible.builtin.set_fact:
+    _cp_flavor: >-
+      {{
+        'Standard' if not openwrt_captive_portal | bool
+        else ('CaptivePortal' if openwrt_cp_engine == 'chilli'
+              else 'CaptivePortal-' + openwrt_cp_engine)
+      }}
+
 - name: Calcola percorsi artefatti
   ansible.builtin.set_fact:
     _artifact_local: >-
       {{
         openwrt_output_dir + '/' + openwrt_version + '/' + openwrt_org + '/' +
-        ('CaptivePortal' if openwrt_captive_portal | bool else 'Standard') +
-        '/VPN-' + openwrt_vpn + '/' + openwrt_target
+        _cp_flavor + '/VPN-' + openwrt_vpn + '/' + openwrt_target
       }}
     _artifact_nfs: >-
       {{
         openwrt_nfs_dir + '/' + openwrt_version + '/' + openwrt_org + '/' +
-        ('CaptivePortal' if openwrt_captive_portal | bool else 'Standard') +
-        '/VPN-' + openwrt_vpn + '/' + openwrt_target
+        _cp_flavor + '/VPN-' + openwrt_vpn + '/' + openwrt_target
       }}
 
 - name: Debug percorsi

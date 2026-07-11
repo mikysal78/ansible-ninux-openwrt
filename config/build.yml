@@ -28,8 +28,13 @@ openwrt_vpn_variants:
   - "WireGuard"
   - "DualVPN"
 
-# Compila anche le varianti con Captive Portal (raddoppia le build)
+# Compila anche le varianti con Captive Portal (una build in più per motore CP)
 openwrt_cp_variants: true
+
+# Motori Captive Portal — una build separata per ognuno (chilli e uspot
+# non convivono: iptables legacy vs firewall4/nftables)
+openwrt_cp_engines:
+  - "chilli"
 
 # -----------------------------------------------------------------------------
 # PERCORSI

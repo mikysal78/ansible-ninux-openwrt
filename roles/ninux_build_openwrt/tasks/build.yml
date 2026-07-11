@@ -29,7 +29,7 @@
     msg:
       - "Target : {{ openwrt_target }}"
       - "VPN    : {{ openwrt_vpn }}"
-      - "CP     : {{ openwrt_captive_portal }}"
+      - "CP     : {{ openwrt_cp_engine if openwrt_captive_portal | bool else 'NO' }}"
       - "Jobs   : {{ _make_jobs }}"
       - "ccache : {{ _openwrt_use_ccache }}"
       - "tmpfs  : {{ openwrt_tmpfs_enabled | default(true) }}"

@@ -24,9 +24,14 @@
     remote_src: true
     mode: "0644"
 
-- name: Appendi estensione Captive Portal
+- name: Appendi estensione Captive Portal (coova-chilli)
   ansible.builtin.shell: cat {{ openwrt_ninux_src_dir }}/chilli.ext >> {{ openwrt_src_dir }}/.config
-  when: openwrt_captive_portal | bool
+  when: openwrt_captive_portal | bool and openwrt_cp_engine == 'chilli'
+  changed_when: true
+
+- name: Appendi estensione Captive Portal (uspot)
+  ansible.builtin.shell: cat {{ openwrt_ninux_src_dir }}/uspot.ext >> {{ openwrt_src_dir }}/.config
+  when: openwrt_captive_portal | bool and openwrt_cp_engine == 'uspot'
   changed_when: true
 
 - name: Appendi estensione ZeroTier

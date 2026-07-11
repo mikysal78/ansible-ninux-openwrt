@@ -37,16 +37,30 @@
              | map('regex_replace', '\.config$', '')
              | sort | list }}
 
+    - name: Calcola dimensione Captive Portal (none + un motore per build)
+      ansible.builtin.set_fact:
+        _cp_engines_org: >-
+          {{ (openwrt_org_cp_engines | default({}))[openwrt_org] | default(openwrt_cp_engines) }}
+
+    - name: Costruisci dimensione CP
+      ansible.builtin.set_fact:
+        _cp_dim: >-
+          {{
+            (['none'] + _cp_engines_org) if openwrt_cp_variants | bool
+            else ([_cp_engines_org[0]] if openwrt_captive_portal | default(false) | bool else ['none'])
+          }}
+
     - name: Costruisci lista varianti (VPN x CP)
       ansible.builtin.set_fact:
         _variant_matrix: >-
           {{
-            _variant_matrix | default([]) + [{'vpn': item.0, 'cp': item.1}]
+            _variant_matrix | default([]) +
+            [{'vpn': item.0, 'cp': item.1 != 'none', 'engine': item.1}]
           }}
       loop: >-
         {{
           (openwrt_org_vpn_variants | default({}))[openwrt_org] | default(openwrt_vpn_variants)
-          | product([false, true] if openwrt_cp_variants | bool else [openwrt_captive_portal | default(false) | bool])
+          | product(_cp_dim)
           | list
         }}
       loop_control:
@@ -69,7 +83,7 @@
           {% for t in _discovered_targets %}
           Device {{ loop.index }}: {{ t }}
           {% for v in _variant_matrix %}
-            → VPN={{ v.vpn }} CP={{ v.cp }}
+            → VPN={{ v.vpn }} CP={{ v.engine if v.cp else 'NO' }}
           {% endfor %}
           {% endfor %}
 

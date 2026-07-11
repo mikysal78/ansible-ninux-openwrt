@@ -32,9 +32,10 @@ ansible-ninux-openwrt/
 │
 ├── config/
 │   ├── base.config                      <- Pacchetti comuni a tutti i target
-│   ├── chilli.ext                       <- Estensione Captive Portal
+│   ├── chilli.ext                       <- Estensione Captive Portal (coova-chilli)
+│   ├── uspot.ext                        <- Estensione Captive Portal (uspot) — build separata
 │   ├── zerotier.ext                     <- Estensione ZeroTier VPN
-│   ├── wireguard.ext                    <- Estensione WireGuard VPN
+│   ├── wireguard.ext                    <- Estensione WireGuard VPN (include VXLAN)
 │   └── organizations/
 │       └── <org>/
 │           └── <device>.config          <- Config per device
@@ -276,6 +277,7 @@ Pipeline e Git sono già inclusi nei plugin suggeriti.
 | `OPENWRT_VERSION` | `v25.12.5` | Tag OpenWrt |
 | `VPN_VARIANTS` | `ALL` | `ALL` / `NO` / `ZeroTier` / `WireGuard` / `DualVPN` |
 | `CAPTIVE_PORTAL_VARIANTS` | false | Compila anche varianti con CP |
+| `CAPTIVE_PORTAL_ENGINE` | `chilli` | Motore CP: `chilli` / `uspot` / `ALL` (build separate) |
 | `SKIP_DEPS` | false | Salta `apt install` (dopo il primo run) |
 | `TMPFS_ENABLED` | true | RAM disk per `tmp/` (+30% velocità) |
 | `TMPFS_SIZE` | `8G` | Dimensione tmpfs |
@@ -315,6 +317,13 @@ openwrt_org: "default"
 # Varianti da compilare
 openwrt_vpn_variants: [NO, ZeroTier, WireGuard, DualVPN]
 openwrt_cp_variants: false
+
+# Varianti per organizzazione (vincono sulla lista globale)
+openwrt_org_vpn_variants:
+  basilicata: [NO, WireGuard]
+
+# Motori Captive Portal: una build separata per ognuno (mai insieme)
+openwrt_cp_engines: [chilli]
 
 # openwisp-config per org (shared_secret cifrata con encrypt_string)
 openwisp_orgs:
@@ -460,9 +469,21 @@ ansible-playbook playbooks/build_all.yml \
 ansible-playbook playbooks/build_all.yml \
   --vault-password-file /var/lib/jenkins/.vault_pass
 
-# Con Captive Portal (2x build per device)
+# Con Captive Portal chilli (2x build per device: senza CP + chilli)
 ansible-playbook playbooks/build_all.yml \
   -e openwrt_cp_variants=true \
+  --vault-password-file /var/lib/jenkins/.vault_pass
+
+# Con Captive Portal uspot al posto di chilli (build separate, mai insieme)
+ansible-playbook playbooks/build_all.yml \
+  -e openwrt_cp_variants=true \
+  -e '{"openwrt_cp_engines": ["uspot"], "openwrt_org_cp_engines": {}}' \
+  --vault-password-file /var/lib/jenkins/.vault_pass
+
+# Entrambi i motori: 3x build per device (senza CP + chilli + uspot)
+ansible-playbook playbooks/build_all.yml \
+  -e openwrt_cp_variants=true \
+  -e '{"openwrt_cp_engines": ["chilli", "uspot"], "openwrt_org_cp_engines": {}}' \
   --vault-password-file /var/lib/jenkins/.vault_pass
 
 # Solo alcune varianti VPN
@@ -638,7 +659,9 @@ output/
         │   ├── VPN-ZeroTier/glinet_gl-mt300n-v2/
         │   ├── VPN-WireGuard/glinet_gl-mt300n-v2/
         │   └── VPN-DualVPN/glinet_gl-mt300n-v2/
-        └── CaptivePortal/
+        ├── CaptivePortal/           <- coova-chilli
+        │   └── VPN-*/...
+        └── CaptivePortal-uspot/     <- uspot (build separata)
             └── VPN-*/...
 ```
 

@@ -22,6 +22,11 @@ pipeline {
             defaultValue: false,
             description: 'Compila ogni variante sia con che senza Captive Portal'
         )
+        choice(
+            name: 'CAPTIVE_PORTAL_ENGINE',
+            choices: ['chilli', 'uspot', 'ALL'],
+            description: 'Motore Captive Portal: build separate, mai chilli e uspot insieme (ALL = una build per motore)'
+        )
         booleanParam(
             name: 'SKIP_DEPS',
             defaultValue: false,
@@ -97,12 +102,14 @@ pipeline {
                     if (!configs) error "Nessun .config in ${configDir}"
                     def nDev  = configs.split('\n').size()
                     def nVpn  = params.VPN_VARIANTS == 'ALL' ? 4 : 1
-                    def nCp   = params.CAPTIVE_PORTAL_VARIANTS ? 2 : 1
+                    def nEng  = params.CAPTIVE_PORTAL_ENGINE == 'ALL' ? 2 : 1
+                    def nCp   = params.CAPTIVE_PORTAL_VARIANTS ? 1 + nEng : 1
                     def total = nDev * nVpn * nCp
                     echo """
 === Piano di build ===
 Device    : ${configs.replaceAll('\n', ', ')}
 Totale    : ${total} firmware (${nDev} dev x ${nVpn} VPN x ${nCp} CP)
+CP engine : ${params.CAPTIVE_PORTAL_VARIANTS ? params.CAPTIVE_PORTAL_ENGINE : 'nessuno'}
 Workspace : ${WORKSPACE}
 """
                     env.DISCOVERED_DEVICES = configs.replaceAll('\n', ', ')
@@ -143,10 +150,14 @@ Workspace : ${WORKSPACE}
                         "--skip-tags deps"
                     ]
                     if (params.VPN_VARIANTS != 'ALL') {
-                        args << "-e '{\"openwrt_vpn_variants\": [\"${params.VPN_VARIANTS}\"]}'"
+                        // svuota anche l'override per org, altrimenti vincerebbe sulla scelta esplicita
+                        args << "-e '{\"openwrt_vpn_variants\": [\"${params.VPN_VARIANTS}\"], \"openwrt_org_vpn_variants\": {}}'"
                     }
+                    args << "-e openwrt_cp_variants=${params.CAPTIVE_PORTAL_VARIANTS}"
                     if (params.CAPTIVE_PORTAL_VARIANTS) {
-                        args << "-e openwrt_cp_variants=true"
+                        def engines = params.CAPTIVE_PORTAL_ENGINE == 'ALL' ? ['chilli', 'uspot'] : [params.CAPTIVE_PORTAL_ENGINE]
+                        def enginesJson = engines.collect { "\"${it}\"" }.join(', ')
+                        args << "-e '{\"openwrt_cp_engines\": [${enginesJson}], \"openwrt_org_cp_engines\": {}}'"
                     }
                     if (params.OPENWISP_UPLOAD) {
                         args << "-e openwisp_upload_enabled=true"

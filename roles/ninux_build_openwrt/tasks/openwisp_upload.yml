@@ -114,13 +114,20 @@
         [openwrt_vpn] | default(openwrt_vpn[:2])
       }}
 
+- name: "[OpenWISP] Abbrevia motore Captive Portal"
+  ansible.builtin.set_fact:
+    _ow_cp_abbr: >-
+      {{
+        '' if not openwrt_captive_portal | bool
+        else ('CP-' if openwrt_cp_engine == 'chilli' else 'US-')
+      }}
+
 - name: "[OpenWISP] Calcola versione build"
   ansible.builtin.set_fact:
     _ow_build_version: >-
       {{
         openwrt_version ~ '-' ~ openwrt_target[:12] ~ '-' ~
-        ('CP-' if openwrt_captive_portal | bool else '') ~
-        'VPN-' ~ _ow_vpn_abbr
+        _ow_cp_abbr ~ 'VPN-' ~ _ow_vpn_abbr
       }}
 
 - name: "[OpenWISP] Cerca build esistente"
@@ -155,7 +162,7 @@
       changelog: >-
         Build automatica Jenkins.
         Org={{ openwrt_org }} Target={{ openwrt_target }}
-        VPN={{ openwrt_vpn }} CP={{ openwrt_captive_portal }}
+        VPN={{ openwrt_vpn }} CP={{ openwrt_cp_engine if openwrt_captive_portal | bool else 'NO' }}
         Data={{ ansible_date_time.iso8601 }}
     status_code: 201
   register: _ow_build_created
