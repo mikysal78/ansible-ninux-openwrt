@@ -37,6 +37,14 @@ openwrt_vpn_variants:
   - "WireGuard"
   - "DualVPN"
 
+# Override varianti VPN per organizzazione — vince sulla lista globale.
+# Le org non elencate qui usano openwrt_vpn_variants.
+# NB: la variante WireGuard include anche VXLAN (vedi config/wireguard.ext).
+openwrt_org_vpn_variants:
+  basilicata:
+    - "NO"
+    - "WireGuard"
+
 # Compila anche le varianti con Captive Portal (raddoppia le build)
 openwrt_cp_variants: true
 

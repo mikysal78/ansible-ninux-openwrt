@@ -37,7 +37,7 @@
     - name: Costruisce matrice di build
       ansible.builtin.set_fact:
         _build_matrix: "{{ _build_matrix | default([]) + [{'vpn': item.0, 'cp': item.1}] }}"
-      loop: "{{ openwrt_vpn_variants | product([false, true] if openwrt_cp_variants | bool else [openwrt_captive_portal | default(false) | bool]) | list }}"
+      loop: "{{ (openwrt_org_vpn_variants | default({}))[openwrt_org] | default(openwrt_vpn_variants) | product([false, true] if openwrt_cp_variants | bool else [openwrt_captive_portal | default(false) | bool]) | list }}"
       loop_control:
         label: "VPN={{ item.0 }} CP={{ item.1 }}"
 

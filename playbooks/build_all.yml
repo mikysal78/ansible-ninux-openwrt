@@ -45,7 +45,7 @@
           }}
       loop: >-
         {{
-          openwrt_vpn_variants
+          (openwrt_org_vpn_variants | default({}))[openwrt_org] | default(openwrt_vpn_variants)
           | product([false, true] if openwrt_cp_variants | bool else [openwrt_captive_portal | default(false) | bool])
           | list
         }}
