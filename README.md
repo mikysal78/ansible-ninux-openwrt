@@ -11,7 +11,7 @@ Sistema di build automatizzato per firmware **OpenWrt** per i nodi della rete me
 3. [Installazione Jenkins su Debian Trixie](#installazione-jenkins-su-debian-trixie)
 4. [Configurazione Jenkins](#configurazione-jenkins)
 5. [Configurazione del build](#configurazione-del-build)
-6. [Gestione password con ansible-vault](#gestione-password-con-ansible-vault)
+6. [Gestione segreti con ansible-vault](#gestione-segreti-con-ansible-vault)
 7. [Aggiungere device e organizzazioni](#aggiungere-device-e-organizzazioni)
 8. [Uso da riga di comando](#uso-da-riga-di-comando)
 9. [Performance e ottimizzazioni](#performance-e-ottimizzazioni)
@@ -75,7 +75,7 @@ ansible-ninux-openwrt/
 ```
 
 **Il file principale da modificare è `ninux.yml`** — contiene tutte le variabili di build,
-la configurazione openwisp-config per organizzazione e le password cifrate inline con `ansible-vault encrypt_string`.
+la configurazione openwisp-config per organizzazione e i segreti cifrati inline con `ansible-vault encrypt_string`.
 
 ---
 
@@ -92,8 +92,8 @@ cp ninux.yml.example ninux.yml
 # 3. Modifica org, versione OpenWrt e configurazione openwisp
 nano ninux.yml
 
-# 4. Genera le password cifrate (shared_secret, credenziali OpenWISP)
-#    Vedi sezione "Gestione password con ansible-vault"
+# 4. Genera i segreti cifrati (shared_secret, credenziali OpenWISP)
+#    Vedi sezione "Gestione segreti con ansible-vault"
 
 # 5. Verifica i device disponibili
 ls config/organizations/default/
@@ -129,7 +129,7 @@ git clone https://github.com/mikysal78/ansible-ninux-openwrt.git
 cd ansible-ninux-openwrt
 sudo ./setup/install-jenkins.sh
 
-# Con vault password per le password openwisp
+# Con vault password per i segreti openwisp
 sudo ./setup/install-jenkins.sh --vault-pass "mia-password-vault"
 
 # Solo dipendenze, Jenkins già installato
@@ -288,7 +288,7 @@ Pipeline e Git sono già inclusi nei plugin suggeriti.
 ### 6. Vault password file
 
 ```bash
-# Sul server Jenkins — necessario per decifrare le password in ninux.yml
+# Sul server Jenkins — necessario per decifrare i segreti in ninux.yml
 echo "mia-password-vault" > /var/lib/jenkins/.vault_pass
 chmod 600 /var/lib/jenkins/.vault_pass
 chown jenkins:jenkins /var/lib/jenkins/.vault_pass
@@ -333,9 +333,9 @@ openwrt_tmpfs_size: "8G"
 
 ---
 
-## Gestione password con ansible-vault
+## Gestione segreti con ansible-vault
 
-I password (shared_secret openwisp, credenziali Firmware Upgrader) sono cifrati
+I segreti (shared_secret openwisp, credenziali Firmware Upgrader) sono cifrati
 **inline in `ninux.yml`** con `ansible-vault encrypt_string`. Non esiste un vault
 file separato — tutto sta in un file solo, i valori sensibili sono illeggibili
 senza la vault password.
