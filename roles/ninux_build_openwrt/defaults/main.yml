@@ -7,7 +7,7 @@
 # Questo evita ambiguita' su playbook_dir dentro i ruoli.
 # ============================================================
 
-openwrt_version: "v25.12.4"
+openwrt_version: "v25.12.5"
 openwrt_target: "glinet_gl-mt300n-v2"
 openwrt_org: "default"
 openwrt_captive_portal: false

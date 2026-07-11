@@ -273,7 +273,7 @@ Pipeline e Git sono già inclusi nei plugin suggeriti.
 | Parametro | Default | Descrizione |
 |-----------|---------|-------------|
 | `OPENWRT_ORG` | `default` | Organizzazione Ninux |
-| `OPENWRT_VERSION` | `v25.12.4` | Tag OpenWrt |
+| `OPENWRT_VERSION` | `v25.12.5` | Tag OpenWrt |
 | `VPN_VARIANTS` | `ALL` | `ALL` / `NO` / `ZeroTier` / `WireGuard` / `DualVPN` |
 | `CAPTIVE_PORTAL_VARIANTS` | false | Compila anche varianti con CP |
 | `SKIP_DEPS` | false | Salta `apt install` (dopo il primo run) |
@@ -309,7 +309,7 @@ Sezioni principali:
 
 ```yaml
 # Versione e org
-openwrt_version: "v25.12.4"
+openwrt_version: "v25.12.5"
 openwrt_org: "default"
 
 # Varianti da compilare
@@ -610,7 +610,7 @@ github_release_include_sha256: true
 
 ### Struttura della release
 
-Ogni release viene creata con tag `<versione>-<org>-build<N>`, es. `v25.12.4-default-build42`.
+Ogni release viene creata con tag `<versione>-<org>-build<N>`, es. `v25.12.5-default-build42`.
 Gli asset vengono caricati con nome che riflette il percorso:
 
 ```
@@ -631,7 +631,7 @@ oppure imposta `github_release_enabled: true` in `ninux.yml` per abilitarlo semp
 
 ```
 output/
-└── v25.12.4/
+└── v25.12.5/
     └── default/
         ├── Standard/
         │   ├── VPN-NO/glinet_gl-mt300n-v2/

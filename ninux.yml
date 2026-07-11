@@ -23,8 +23,8 @@
 # BUILD — Versione e organizzazione
 # -----------------------------------------------------------------------------
 
-# Tag OpenWrt da compilare (es. v25.12.4, v24.10.0, snapshot)
-openwrt_version: "v25.12.4"
+# Tag OpenWrt da compilare (es. v25.12.5, v24.10.0, snapshot)
+openwrt_version: "v25.12.5"
 
 # Organizzazione Ninux attiva — corrisponde a config/organizations/<org>/
 openwrt_org: "default"
