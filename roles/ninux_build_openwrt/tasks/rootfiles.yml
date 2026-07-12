@@ -84,13 +84,19 @@
     state: absent
   when: _vpn not in ['ZeroTier', 'Dual']
 
-# La configurazione del portale (/etc/config/uspot) la spinge OpenWISP come
-# template, come gia' avviene per chilli: nel firmware ci vanno solo i pacchetti
-# (config/uspot.ext). Nessun uci-default 99-uspot.
+# La configurazione del portale la spinge OpenWISP come template: nel firmware
+# c'e' solo /etc/config/uspot vuoto (come /etc/config/chilli), che il template
+# OpenWISP sovrascrive al primo checkin. Nessun uci-default 99-uspot.
 - name: Rimuovi 99-uspot residuo (la config uspot arriva da OpenWISP)
   ansible.builtin.file:
     path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-uspot"
     state: absent
+
+- name: Rimuovi /etc/config/uspot (CP disabilitato o motore diverso da uspot)
+  ansible.builtin.file:
+    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/config/uspot"
+    state: absent
+  when: not (openwrt_captive_portal | bool and openwrt_cp_engine == 'uspot')
 
 - name: Scrivi uci-default 99-zerotier (ZeroTier / Dual)
   ansible.builtin.template:
