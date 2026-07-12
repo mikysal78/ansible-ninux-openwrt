@@ -103,6 +103,10 @@ openwisp_password: ""
 openwisp_org_slug: "{{ openwrt_org }}"
 openwisp_org_id: ""
 openwisp_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"
+# Sostituisci la build se la versione esiste gia' (evita firmware vecchio online)
+openwisp_replace_build: true
+# Quante versioni OpenWrt tenere su OpenWISP per device (0 = retention disattivata)
+openwisp_keep_versions: 3
 openwisp_trigger_upgrade: false
 openwisp_upgrade_group: ""
 

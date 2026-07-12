@@ -638,10 +638,13 @@ openwisp_org_id: !vault |
       <UUID cifrato>
 openwisp_trigger_upgrade: false   # true = avvia upgrade automatico
 
+openwisp_replace_build: true      # stessa versione = build sostituita
+openwisp_keep_versions: 3         # versioni OpenWrt da tenere (0 = tieni tutto)
+
 openwisp_orgs:
-  default:
+  basilicata:
     controller_url: "https://openwisp.ninux-nnxx.it"
-    management_interface: "owzXXXXX"
+    management_interface: "wg0"
     shared_secret: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           <stringa cifrata>
@@ -649,6 +652,22 @@ openwisp_orgs:
           $ANSIBLE_VAULT;1.1;AES256
           <token API cifrato>
 ```
+
+### Sostituzione e retention
+
+Su OpenWISP c'è una **category per device** (`Ninux Basilicata - x86_64`) e dentro
+una **build per variante** (`v25.12.5-x86_64-VPN-WG`). La versione della build
+contiene la versione OpenWrt, quindi le build si accumulano a ogni nuovo tag.
+
+- **`openwisp_replace_build: true`** — se ricompili la *stessa* versione OpenWrt,
+  la build esistente viene cancellata e ricreata. Serve: riusandola, l'upload
+  dell'immagine risponderebbe `400` (duplicato) e sul controller resterebbe il
+  firmware **vecchio**.
+- **`openwisp_keep_versions: 3`** — dopo l'upload tiene solo le build delle 3
+  versioni OpenWrt più recenti per ogni device, cancellando le più vecchie (le
+  immagini vengono rimosse in cascata). La retention ragiona per *versione*, non
+  per singola build: tutte le varianti VPN/CP della stessa versione restano
+  insieme. `0` disattiva la cancellazione.
 
 ### Flusso
 

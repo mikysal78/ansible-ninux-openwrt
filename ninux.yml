@@ -158,6 +158,16 @@ openwisp_org_id: !vault |
 # Nome della category firmware in OpenWISP
 openwisp_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"
 
+# Se la build con la stessa versione esiste gia' su OpenWISP, la sostituisce
+# (la cancella e la ricrea). Con false verrebbe riusata e il firmware caricato
+# resterebbe quello VECCHIO: l'upload di un'immagine duplicata risponde 400.
+openwisp_replace_build: true
+
+# Retention: quante versioni OpenWrt tenere su OpenWISP per ogni device.
+# Le build piu' vecchie (e le loro immagini) vengono cancellate dopo l'upload.
+# 0 = disabilita la retention, non cancella nulla.
+openwisp_keep_versions: 3
+
 # Avvia batch upgrade su tutti i device dopo l'upload
 openwisp_trigger_upgrade: false
 

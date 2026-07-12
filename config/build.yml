@@ -154,6 +154,12 @@ openwisp_org_id: ""
 # Nome della category firmware in OpenWISP (creata se non esiste)
 openwisp_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"
 
+# Sostituisci la build se la versione esiste gia' su OpenWISP
+openwisp_replace_build: true
+
+# Retention: versioni OpenWrt da tenere per device (0 = disattivata)
+openwisp_keep_versions: 3
+
 # Avvia batch upgrade su tutti i device dopo l'upload
 openwisp_trigger_upgrade: false
 
