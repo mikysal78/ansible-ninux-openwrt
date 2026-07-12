@@ -4,7 +4,7 @@
 #
 # Alternativa a coova-chilli: uspot usa firewall4/nftables.
 # La rete captive (bridge br-cp su cpwlan0, proto autoip per la mesh)
-# resta definita in 99-br-cp: qui NON si tocca network/dhcp.
+# resta definita in 99-mesh: qui NON si tocca network/dhcp.
 
 uci -q batch <<-EOF >/dev/null
 # --- Portale uspot sull'interfaccia captive della mesh ---

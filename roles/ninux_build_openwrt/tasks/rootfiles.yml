@@ -61,18 +61,23 @@
     _openwisp_management_interface: "{{ openwisp_orgs[openwrt_org].management_interface }}"
     _openwisp_shared_secret: "{{ openwisp_orgs[openwrt_org].shared_secret }}"
 
-- name: Scrivi uci-default 99-br-cp (rete captive: bridge br-cp, autoip per la mesh)
+- name: Scrivi uci-default 99-mesh (bridge br-cp autoip, comune ai motori CP)
   ansible.builtin.template:
-    src: 99-br-cp.j2
-    dest: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-br-cp"
+    src: 99-mesh.j2
+    dest: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-mesh"
     mode: "0755"
   when: openwrt_captive_portal | bool
 
-- name: Rimuovi 99-br-cp (Captive Portal disabilitato)
+- name: Rimuovi 99-mesh (Captive Portal disabilitato)
+  ansible.builtin.file:
+    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-mesh"
+    state: absent
+  when: not openwrt_captive_portal | bool
+
+- name: Rimuovi 99-br-cp residuo (sostituito da 99-mesh)
   ansible.builtin.file:
     path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-br-cp"
     state: absent
-  when: not openwrt_captive_portal | bool
 
 - name: Scrivi uci-default 99-uspot (Captive Portal uspot)
   ansible.builtin.template:
