@@ -61,16 +61,16 @@
     _openwisp_management_interface: "{{ openwisp_orgs[openwrt_org].management_interface }}"
     _openwisp_shared_secret: "{{ openwisp_orgs[openwrt_org].shared_secret }}"
 
-- name: Scrivi uci-default 99-mesh (bridge br-cp autoip — sempre, la mesh serve a tutte le varianti)
-  ansible.builtin.template:
-    src: 99-mesh.j2
-    dest: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-mesh"
-    mode: "0755"
-
-- name: Rimuovi 99-br-cp residuo (sostituito da 99-mesh)
+# La rete mesh (bridge br-cp) la configura OpenWISP con un suo template:
+# nessun uci-default nel firmware. Qui si ripuliscono solo i file residui
+# lasciati nell'overlay da build precedenti.
+- name: Rimuovi uci-defaults di rete residui (mesh gestita da OpenWISP)
   ansible.builtin.file:
-    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-br-cp"
+    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/{{ item }}"
     state: absent
+  loop:
+    - 99-mesh
+    - 99-br-cp
 
 - name: Rimuovi /etc/config/chilli (CP disabilitato o motore diverso da chilli)
   ansible.builtin.file:

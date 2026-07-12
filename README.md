@@ -465,10 +465,11 @@ Cosa contiene e cosa va adattato:
 | `etc/config/zerotier`          | Config ZeroTier (solo build con VPN ZeroTier/Dual) |
 | `etc/config/openwisp`          | **Non toccare**: se l'org è in `openwisp_orgs` viene rigenerato dalla build |
 
-Gli uci-defaults `99-mesh` (bridge `br-cp`, sempre) e `99-zerotier` (VPN
-ZeroTier/Dual) sono generati dai template del ruolo: non vanno creati a mano.
-La configurazione del captive portal (chilli o uspot) non sta nel firmware:
-la spinge OpenWISP come template.
+L'uci-default `99-zerotier` (VPN ZeroTier/Dual) è generato dal template del
+ruolo: non va creato a mano. **Rete mesh e captive portal non stanno nel
+firmware**: bridge `br-cp` e configurazione di chilli/uspot arrivano da
+OpenWISP come template, il firmware porta solo i pacchetti e i file di config
+vuoti.
 
 **3. Varianti da compilare** (`ninux.yml`) — opzionale, se l'org non deve
 compilare tutte le varianti VPN globali:
