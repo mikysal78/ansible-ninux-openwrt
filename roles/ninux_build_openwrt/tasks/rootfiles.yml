@@ -61,18 +61,31 @@
     _openwisp_management_interface: "{{ openwisp_orgs[openwrt_org].management_interface }}"
     _openwisp_shared_secret: "{{ openwisp_orgs[openwrt_org].shared_secret }}"
 
-- name: Scrivi uci-default 99-br-cp (Captive Portal abilitato)
+- name: Scrivi uci-default 99-br-cp (Captive Portal coova-chilli)
   ansible.builtin.template:
     src: 99-br-cp.j2
     dest: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-br-cp"
     mode: "0755"
-  when: openwrt_captive_portal | bool
+  when: openwrt_captive_portal | bool and openwrt_cp_engine == 'chilli'
 
-- name: Rimuovi 99-br-cp (Captive Portal disabilitato)
+- name: Rimuovi 99-br-cp (CP disabilitato o motore diverso da chilli)
   ansible.builtin.file:
     path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-br-cp"
     state: absent
-  when: not openwrt_captive_portal | bool
+  when: not (openwrt_captive_portal | bool and openwrt_cp_engine == 'chilli')
+
+- name: Scrivi uci-default 99-uspot (Captive Portal uspot)
+  ansible.builtin.template:
+    src: 99-uspot.j2
+    dest: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-uspot"
+    mode: "0755"
+  when: openwrt_captive_portal | bool and openwrt_cp_engine == 'uspot'
+
+- name: Rimuovi 99-uspot (CP disabilitato o motore diverso da uspot)
+  ansible.builtin.file:
+    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-uspot"
+    state: absent
+  when: not (openwrt_captive_portal | bool and openwrt_cp_engine == 'uspot')
 
 - name: Scrivi uci-default 99-zerotier (ZeroTier / DualVPN)
   ansible.builtin.template:

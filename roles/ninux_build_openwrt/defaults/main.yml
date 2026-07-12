@@ -16,6 +16,9 @@ openwrt_cp_engine: "chilli"
 # Motori CP per cui generare una build separata quando openwrt_cp_variants: true
 openwrt_cp_engines:
   - "chilli"
+# Rete della LAN captive per uspot (uci-default 99-uspot)
+uspot_network: "192.168.182"
+uspot_gateway: "192.168.182.1"
 openwrt_vpn: "NO"
 openwrt_build_user: "{{ ansible_user_id }}"
 
