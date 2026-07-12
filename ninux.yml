@@ -62,12 +62,12 @@ openwrt_cp_engines:
   - "chilli"
 
 # Override motori CP per organizzazione — vince sulla lista globale.
-# Es: basilicata continua con chilli, un'altra org prova uspot:
-# openwrt_org_cp_engines:
-#   basilicata:
-#     - "chilli"
-#   test:
-#     - "uspot"
+# basilicata prova uspot al posto di chilli.
+# Per tornare a chilli: rimetti "chilli" al posto di "uspot".
+# Per compilarli entrambi (build separate): elencali tutti e due.
+openwrt_org_cp_engines:
+  basilicata:
+    - "uspot"
 
 
 # -----------------------------------------------------------------------------
