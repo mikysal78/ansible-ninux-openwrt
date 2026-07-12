@@ -110,8 +110,8 @@
   ansible.builtin.set_fact:
     _ow_vpn_abbr: >-
       {{
-        {'NO': 'NO', 'ZeroTier': 'ZT', 'WireGuard': 'WG', 'DualVPN': 'DV'}
-        [openwrt_vpn] | default(openwrt_vpn[:2])
+        {'NONE': 'NO', 'ZeroTier': 'ZT', 'WireGuard': 'WG', 'Dual': 'DV'}
+        [_vpn] | default(_vpn[:2])
       }}
 
 - name: "[OpenWISP] Abbrevia motore Captive Portal"
@@ -162,7 +162,7 @@
       changelog: >-
         Build automatica Jenkins.
         Org={{ openwrt_org }} Target={{ openwrt_target }}
-        VPN={{ openwrt_vpn }} CP={{ openwrt_cp_engine if openwrt_captive_portal | bool else 'NO' }}
+        VPN={{ _vpn }} CP={{ openwrt_cp_engine if openwrt_captive_portal | bool else 'NONE' }}
         Data={{ ansible_date_time.iso8601 }}
     status_code: 201
   register: _ow_build_created

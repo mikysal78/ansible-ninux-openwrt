@@ -22,10 +22,10 @@
   vars:
     openwrt_work_dir: "{{ playbook_dir }}/.."
     openwrt_vpn_variants:
-      - "NO"
+      - "NONE"
       - "ZeroTier"
       - "WireGuard"
-      - "DualVPN"
+      - "Dual"
     openwrt_cp_variants: false
     parallel_builds: 2   # device in parallelo
 

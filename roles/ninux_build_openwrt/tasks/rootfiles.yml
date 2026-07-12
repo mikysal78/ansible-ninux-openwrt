@@ -82,7 +82,7 @@
   ansible.builtin.file:
     path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/config/zerotier"
     state: absent
-  when: openwrt_vpn not in ['ZeroTier', 'DualVPN']
+  when: _vpn not in ['ZeroTier', 'Dual']
 
 - name: Scrivi uci-default 99-uspot (Captive Portal uspot)
   ansible.builtin.template:
@@ -97,18 +97,18 @@
     state: absent
   when: not (openwrt_captive_portal | bool and openwrt_cp_engine == 'uspot')
 
-- name: Scrivi uci-default 99-zerotier (ZeroTier / DualVPN)
+- name: Scrivi uci-default 99-zerotier (ZeroTier / Dual)
   ansible.builtin.template:
     src: 99-zerotier.j2
     dest: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-zerotier"
     mode: "0755"
-  when: openwrt_vpn in ['ZeroTier', 'DualVPN']
+  when: _vpn in ['ZeroTier', 'Dual']
 
 - name: Rimuovi 99-zerotier (VPN diversa)
   ansible.builtin.file:
     path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-zerotier"
     state: absent
-  when: openwrt_vpn not in ['ZeroTier', 'DualVPN']
+  when: _vpn not in ['ZeroTier', 'Dual']
 
 - name: Copia overlay root_files in openwrt/files/
   ansible.builtin.copy:

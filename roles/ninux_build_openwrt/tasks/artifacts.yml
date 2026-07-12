@@ -15,12 +15,12 @@
     _artifact_local: >-
       {{
         openwrt_output_dir + '/' + openwrt_version + '/' + openwrt_org + '/' +
-        _cp_flavor + '/VPN-' + openwrt_vpn + '/' + openwrt_target
+        _cp_flavor + '/VPN-' + _vpn + '/' + openwrt_target
       }}
     _artifact_nfs: >-
       {{
         openwrt_nfs_dir + '/' + openwrt_version + '/' + openwrt_org + '/' +
-        _cp_flavor + '/VPN-' + openwrt_vpn + '/' + openwrt_target
+        _cp_flavor + '/VPN-' + _vpn + '/' + openwrt_target
       }}
 
 - name: Debug percorsi

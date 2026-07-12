@@ -275,7 +275,7 @@ Pipeline e Git sono già inclusi nei plugin suggeriti.
 |-----------|---------|-------------|
 | `OPENWRT_ORG` | `default` | Organizzazione Ninux |
 | `OPENWRT_VERSION` | `v25.12.5` | Tag OpenWrt |
-| `VPN_VARIANTS` | `ALL` | `ALL` / `NO` / `ZeroTier` / `WireGuard` / `DualVPN` |
+| `VPN_VARIANTS` | `ALL` | `ALL` / `NONE` / `ZeroTier` / `WireGuard` / `Dual` |
 | `CAPTIVE_PORTAL_VARIANTS` | false | Compila anche varianti con CP |
 | `CAPTIVE_PORTAL_ENGINE` | `chilli` | Motore CP: `chilli` / `uspot` / `ALL` (build separate) |
 | `SKIP_DEPS` | false | Salta `apt install` (dopo il primo run) |
@@ -315,12 +315,12 @@ openwrt_version: "v25.12.5"
 openwrt_org: "default"
 
 # Varianti da compilare
-openwrt_vpn_variants: [NO, ZeroTier, WireGuard, DualVPN]
+openwrt_vpn_variants: [NONE, ZeroTier, WireGuard, Dual]
 openwrt_cp_variants: false
 
 # Varianti per organizzazione (vincono sulla lista globale)
 openwrt_org_vpn_variants:
-  basilicata: [NO, WireGuard]
+  basilicata: [NONE, WireGuard]
 
 # Motori Captive Portal: una build separata per ognuno (mai insieme)
 openwrt_cp_engines: [chilli]
@@ -488,7 +488,7 @@ ansible-playbook playbooks/build_all.yml \
 
 # Solo alcune varianti VPN
 ansible-playbook playbooks/build_all.yml \
-  -e '{"openwrt_vpn_variants": ["NO", "ZeroTier"]}' \
+  -e '{"openwrt_vpn_variants": ["NONE", "ZeroTier"]}' \
   --vault-password-file /var/lib/jenkins/.vault_pass
 
 # Singolo device, tutte le varianti
@@ -518,10 +518,10 @@ ansible-playbook playbooks/cleanup.yml -e cleanup_output=true # solo output/
 
 ```
 Device 1
-  ├── VPN=NO        ─┐
+  ├── VPN=NONE      ─┐
   ├── VPN=ZeroTier   ├─ parallelo (async, condividono toolchain)
   ├── VPN=WireGuard  │
-  └── VPN=DualVPN   ─┘
+  └── VPN=Dual      ─┘
   → pulizia staging_dir/build_dir
 Device 2
   └── (idem)
@@ -655,10 +655,10 @@ output/
 └── v25.12.5/
     └── default/
         ├── Standard/
-        │   ├── VPN-NO/glinet_gl-mt300n-v2/
+        │   ├── VPN-NONE/glinet_gl-mt300n-v2/
         │   ├── VPN-ZeroTier/glinet_gl-mt300n-v2/
         │   ├── VPN-WireGuard/glinet_gl-mt300n-v2/
-        │   └── VPN-DualVPN/glinet_gl-mt300n-v2/
+        │   └── VPN-Dual/glinet_gl-mt300n-v2/
         ├── CaptivePortal/           <- coova-chilli
         │   └── VPN-*/...
         └── CaptivePortal-uspot/     <- uspot (build separata)

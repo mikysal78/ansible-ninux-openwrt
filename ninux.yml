@@ -30,19 +30,19 @@ openwrt_version: "v25.12.5"
 openwrt_org: "default"
 
 # Varianti VPN da compilare per ogni device
-# Valori possibili: NO, ZeroTier, WireGuard, DualVPN
+# Valori possibili: NONE, ZeroTier, WireGuard, Dual
 openwrt_vpn_variants:
-  - "NO"
+  - "NONE"
   - "ZeroTier"
   - "WireGuard"
-  - "DualVPN"
+  - "Dual"
 
 # Override varianti VPN per organizzazione — vince sulla lista globale.
 # Le org non elencate qui usano openwrt_vpn_variants.
 # NB: la variante WireGuard include anche VXLAN (vedi config/wireguard.ext).
 openwrt_org_vpn_variants:
   basilicata:
-    - "NO"
+    - "NONE"
     - "WireGuard"
 
 # Compila anche le varianti con Captive Portal (una build in più per motore CP)

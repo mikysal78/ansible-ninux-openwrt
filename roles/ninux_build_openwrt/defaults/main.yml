@@ -18,7 +18,17 @@ openwrt_cp_engines:
   - "chilli"
 # Porta uhttpd delle pagine del portale uspot (LuCI resta sulla 80)
 uspot_portal_port: 3990
-openwrt_vpn: "NO"
+openwrt_vpn: "NONE"
+
+# Alias accettati per le varianti VPN (chiave in minuscolo -> nome canonico).
+# Canonici: NONE, ZeroTier, WireGuard, Dual
+openwrt_vpn_aliases:
+  none: "NONE"
+  "no": "NONE"
+  zerotier: "ZeroTier"
+  wireguard: "WireGuard"
+  dual: "Dual"
+  dualvpn: "Dual"
 openwrt_build_user: "{{ ansible_user_id }}"
 
 # Questi path dipendono da openwrt_work_dir che viene dal playbook

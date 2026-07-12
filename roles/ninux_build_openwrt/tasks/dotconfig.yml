@@ -36,12 +36,12 @@
 
 - name: Appendi estensione ZeroTier
   ansible.builtin.shell: cat {{ openwrt_ninux_src_dir }}/zerotier.ext >> {{ openwrt_src_dir }}/.config
-  when: openwrt_vpn in ['ZeroTier', 'DualVPN']
+  when: _vpn in ['ZeroTier', 'Dual']
   changed_when: true
 
 - name: Appendi estensione WireGuard
   ansible.builtin.shell: cat {{ openwrt_ninux_src_dir }}/wireguard.ext >> {{ openwrt_src_dir }}/.config
-  when: openwrt_vpn in ['WireGuard', 'DualVPN']
+  when: _vpn in ['WireGuard', 'Dual']
   changed_when: true
 
 - name: Appendi config base comune

@@ -3,6 +3,20 @@
 # ninux_build_openwrt - tasks/main.yml
 # ============================================================
 
+- name: Normalizza il nome della variante VPN
+  ansible.builtin.set_fact:
+    _vpn: "{{ openwrt_vpn_aliases[openwrt_vpn | lower] | default(openwrt_vpn) }}"
+  tags: [always]
+
+- name: Valida variante VPN
+  ansible.builtin.assert:
+    that:
+      - _vpn in ['NONE', 'ZeroTier', 'WireGuard', 'Dual']
+    fail_msg: >
+      Variante VPN '{{ openwrt_vpn }}' non valida.
+      Valori ammessi: NONE, ZeroTier, WireGuard, Dual.
+  tags: [always]
+
 - name: Install build dependencies
   ansible.builtin.include_tasks: deps.yml
   tags: [deps]

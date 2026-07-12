@@ -30,12 +30,12 @@ openwrt_version: "v25.12.4"
 openwrt_org: "default"
 
 # Varianti VPN da compilare per ogni device
-# Valori possibili: NO, ZeroTier, WireGuard, DualVPN
+# Valori possibili: NONE, ZeroTier, WireGuard, Dual
 openwrt_vpn_variants:
-  - "NO"
+  - "NONE"
   - "ZeroTier"
   - "WireGuard"
-  - "DualVPN"
+  - "Dual"
 
 # Compila anche le varianti con Captive Portal (raddoppia le build)
 openwrt_cp_variants: true

@@ -24,11 +24,11 @@
         } if _openwrt_use_ccache | bool else {}
       }}
 
-- name: "Build: {{ openwrt_target }} VPN={{ openwrt_vpn }} CP={{ openwrt_captive_portal }} jobs={{ _make_jobs }}"
+- name: "Build: {{ openwrt_target }} VPN={{ _vpn }} CP={{ openwrt_captive_portal }} jobs={{ _make_jobs }}"
   ansible.builtin.debug:
     msg:
       - "Target : {{ openwrt_target }}"
-      - "VPN    : {{ openwrt_vpn }}"
+      - "VPN    : {{ _vpn }}"
       - "CP     : {{ openwrt_cp_engine if openwrt_captive_portal | bool else 'NO' }}"
       - "Jobs   : {{ _make_jobs }}"
       - "ccache : {{ _openwrt_use_ccache }}"

@@ -14,7 +14,7 @@ pipeline {
         )
         choice(
             name: 'VPN_VARIANTS',
-            choices: ['ALL', 'NO', 'ZeroTier', 'WireGuard', 'DualVPN'],
+            choices: ['ALL', 'NONE', 'ZeroTier', 'WireGuard', 'Dual'],
             description: 'Varianti VPN (ALL = tutte e 4)'
         )
         booleanParam(
