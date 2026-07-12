@@ -34,6 +34,15 @@
           - openwrt_vpn_variants is defined and openwrt_vpn_variants | length > 0
         fail_msg: "Definisci openwrt_org e openwrt_target"
 
+    - name: Rifiuta le org di solo esempio
+      ansible.builtin.assert:
+        that:
+          - openwrt_org not in (openwrt_example_orgs | default([]))
+        fail_msg: >-
+          L'org '{{ openwrt_org }}' e' solo un esempio e non va compilata.
+          Usa un'org reale (es. -e openwrt_org=basilicata) o creane una nuova
+          (vedi README, sezione "Aggiungere device e organizzazioni").
+
     - name: Calcola dimensione Captive Portal (none + un motore per build)
       ansible.builtin.set_fact:
         _cp_dim: >-

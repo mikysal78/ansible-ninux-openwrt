@@ -27,7 +27,13 @@
 openwrt_version: "v25.12.5"
 
 # Organizzazione Ninux attiva — corrisponde a config/organizations/<org>/
-openwrt_org: "default"
+openwrt_org: "basilicata"
+
+# Org di solo esempio: NON compilabili, i loro file servono da template
+# (config/organizations/default/, config/root_files/default/).
+# Una build su queste org si ferma subito con un messaggio esplicativo.
+openwrt_example_orgs:
+  - "default"
 
 # Varianti VPN da compilare per ogni device
 # Valori possibili: NONE, ZeroTier, WireGuard, Dual
@@ -111,7 +117,7 @@ openwisp_orgs:
           62656565303030333964303962373336663431613265346263646364396666643935373963643738
           3266626636343833353765656131323931666136383361383166
 
-  # roma:
+  # esempio:
   #   controller_url: "https://openwisp.ninux-nnxx.it"
   #   management_interface: "owzABCDE"
   #   shared_secret: !vault |

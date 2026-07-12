@@ -16,6 +16,17 @@
           - openwrt_org is defined and openwrt_org | length > 0
         fail_msg: "Definisci openwrt_org in ninux.yml o con -e openwrt_org=xxx"
 
+    - name: Rifiuta le org di solo esempio
+      ansible.builtin.assert:
+        that:
+          - openwrt_org not in (openwrt_example_orgs | default([]))
+        fail_msg: >-
+          L'org '{{ openwrt_org }}' e' solo un esempio e non va compilata:
+          i suoi file (config/organizations/{{ openwrt_org }}/,
+          config/root_files/{{ openwrt_org }}/) servono da template.
+          Usa un'org reale, es. -e openwrt_org=basilicata, oppure creane una nuova
+          (vedi README, sezione "Aggiungere device e organizzazioni").
+
     - name: Scopri device disponibili per org
       ansible.builtin.find:
         paths: "{{ openwrt_work_dir }}/config/organizations/{{ openwrt_org }}"

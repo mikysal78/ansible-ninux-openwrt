@@ -18,7 +18,12 @@
 openwrt_version: "v25.12.5"
 
 # Organizzazione Ninux - corrisponde a config/organizations/<org>/
-openwrt_org: "default"
+openwrt_org: "basilicata"
+
+# Org di solo esempio: non compilabili (i loro file servono da template).
+# Una build su queste org fallisce subito con un messaggio esplicativo.
+openwrt_example_orgs:
+  - "default"
 
 # Varianti VPN da compilare per ogni device
 # Possibili valori: NONE, ZeroTier, WireGuard, Dual

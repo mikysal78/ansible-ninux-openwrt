@@ -96,11 +96,12 @@ nano ninux.yml
 # 4. Genera i segreti cifrati (shared_secret, credenziali OpenWISP)
 #    Vedi sezione "Gestione segreti con ansible-vault"
 
-# 5. Verifica i device disponibili
-ls config/organizations/default/
+# 5. Verifica i device disponibili (default = org di esempio, non compilabile)
+ls config/organizations/basilicata/
 
 # 6. Lancia la build
 ansible-playbook playbooks/build_all.yml \
+  -e openwrt_org=basilicata \
   --vault-password-file /var/lib/jenkins/.vault_pass
 ```
 
@@ -380,7 +381,7 @@ Output da incollare in `ninux.yml`:
 
 ```yaml
 openwisp_orgs:
-  roma:
+  esempio:
     controller_url: "https://openwisp.ninux-nnxx.it"
     management_interface: "owzABCDE"
     shared_secret: !vault |
@@ -431,34 +432,104 @@ L'autodiscovery lo includerà automaticamente nella prossima build.
 
 ### Nuova organizzazione
 
+> **L'org `default` è solo un esempio e non è compilabile.** I suoi file
+> (`config/organizations/default/`, `config/root_files/default/`) servono da
+> template da copiare. Una build con `-e openwrt_org=default` si ferma subito
+> con un errore. Le org di esempio sono elencate in `openwrt_example_orgs`
+> (`ninux.yml`). L'org reale attualmente in produzione è `basilicata`.
+
+**1. Directory dei device** — un `.config` per device, il nome del file (senza
+estensione) è il valore di `openwrt_target`. L'autodiscovery li trova da solo:
+
 ```bash
-# 1. Crea directory config device
-mkdir -p config/organizations/roma
+mkdir -p config/organizations/esempio
+cp config/organizations/default/*.config config/organizations/esempio/
+# poi rimuovi i device che l'org non usa
+```
 
-# 2. Aggiungi i .config dei device
-cp config/organizations/default/*.config config/organizations/roma/
+**2. Overlay dei file di sistema** — copiato dentro il firmware così com'è:
 
-# 3. Aggiungi la sezione in ninux.yml
-nano ninux.yml
-# openwisp_orgs:
-#   roma:
-#     controller_url: "https://openwisp.ninux-nnxx.it"
-#     management_interface: "owzABCDE"
-#     shared_secret: !vault | ...
+```bash
+mkdir -p config/root_files/esempio
+cp -r config/root_files/default/* config/root_files/esempio/
+```
 
-# 4. Genera la shared_secret cifrata
-ansible-vault encrypt_string \
-  --vault-password-file /var/lib/jenkins/.vault_pass \
-  'SecretRomaXyz' --name 'shared_secret'
+Cosa contiene e cosa va adattato:
 
-# 5. Build per la nuova org
+| File | A cosa serve |
+|------|--------------|
+| `etc/uci-defaults/99-hostname` | Prefisso hostname dei nodi |
+| `etc/uci-defaults/99-dnsmasq`  | DNS della mesh e whitelist DNS-rebind (aggiungi i domini dell'org: senza, il controller OpenWISP non si risolve se punta a IP privati) |
+| `etc/config/watchcat`          | Riavvio automatico su perdita connettività |
+| `etc/config/chilli`            | Config coova-chilli (solo build con CP chilli) |
+| `etc/config/zerotier`          | Config ZeroTier (solo build con VPN ZeroTier/Dual) |
+| `etc/config/openwisp`          | **Non toccare**: se l'org è in `openwisp_orgs` viene rigenerato dalla build |
+
+Gli uci-defaults `99-mesh` (bridge `br-cp`, sempre), `99-uspot` (CP uspot) e
+`99-zerotier` (VPN ZeroTier/Dual) sono generati dai template del ruolo: non
+vanno creati a mano.
+
+**3. Varianti da compilare** (`ninux.yml`) — opzionale, se l'org non deve
+compilare tutte le varianti VPN globali:
+
+```yaml
+openwrt_org_vpn_variants:
+  esempio:
+    - "NONE"
+    - "WireGuard"     # include VXLAN
+
+# opzionale: motore Captive Portal diverso dal globale
+openwrt_org_cp_engines:
+  esempio:
+    - "uspot"         # chilli e uspot non convivono: build separate
+```
+
+**4. openwisp-config** (`ninux.yml`) — perché i nodi si registrino al controller.
+Servono la `shared_secret` dell'org su OpenWISP e l'interfaccia di management
+(`wg0` con WireGuard, `owzXXXX` con ZeroTier):
+
+```bash
+ansible-vault encrypt_string --vault-password-file /var/lib/jenkins/.vault_pass \
+  'SECRET_DELL_ORG' --name 'shared_secret'
+ansible-vault encrypt_string --vault-password-file /var/lib/jenkins/.vault_pass \
+  'TOKEN_API_OPENWISP' --name 'api_token'
+```
+
+Incolla i due blocchi cifrati sotto `openwisp_orgs`:
+
+```yaml
+openwisp_orgs:
+  esempio:
+    controller_url: "https://openwisp.ninux-nnxx.it"
+    management_interface: "wg0"
+    shared_secret: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          ...
+    api_token: !vault |          # serve solo per l'upload firmware su OpenWISP
+          $ANSIBLE_VAULT;1.1;AES256
+          ...
+```
+
+Il token API si ottiene dal controller con:
+
+```bash
+curl -s -X POST https://openwisp.ninux-nnxx.it/api/v1/users/token/ \
+  -d "username=UTENTE" -d 'password=PASSWORD'
+```
+
+**5. Build**:
+
+```bash
 ansible-playbook playbooks/build_all.yml \
-  -e openwrt_org=roma \
+  -e openwrt_org=esempio \
   --vault-password-file /var/lib/jenkins/.vault_pass
 ```
 
-> Se un'org non è definita in `openwisp_orgs` o manca la `shared_secret`,
-> la build continua normalmente ma salta la generazione di `/etc/config/openwisp`.
+Su Jenkins basta scrivere `esempio` nel parametro `OPENWRT_ORG`.
+
+> Se l'org non è definita in `openwisp_orgs` o manca la `shared_secret`, la build
+> continua ma salta la generazione di `/etc/config/openwisp`: i nodi non si
+> registrano al controller.
 
 ---
 

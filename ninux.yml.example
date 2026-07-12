@@ -66,7 +66,7 @@ openwisp_orgs:
           # PLACEHOLDER — Token API utente OpenWISP per org default
           # Admin OpenWISP → Users → <utente org> → API Keys
           # ansible-vault encrypt_string ... 'IL_TOKEN' --name 'api_token'
-  # roma:
+  # esempio:
   #   controller_url: "https://openwisp.ninux-nnxx.it"
   #   management_interface: "owzABCDE"
   #   shared_secret: !vault |
