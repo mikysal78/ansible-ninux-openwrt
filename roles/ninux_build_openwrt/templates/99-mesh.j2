@@ -4,8 +4,8 @@
 #
 # Bridge br-cp su cpwlan0 con proto autoip: e' il layer 2 condiviso della mesh.
 # Presente in TUTTE le immagini, anche senza Captive Portal (bridge_empty=1
-# regge il caso in cui cpwlan0 non esista). Il portale si configura sopra:
-# 99-uspot (uspot) oppure /etc/config/chilli (coova-chilli).
+# regge il caso in cui cpwlan0 non esista). La configurazione del portale
+# (chilli o uspot) arriva da OpenWISP come template: qui solo la rete.
 
 uci -q batch <<-EOF >/dev/null
 set network.CP=interface

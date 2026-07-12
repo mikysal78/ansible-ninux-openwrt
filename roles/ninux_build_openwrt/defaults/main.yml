@@ -16,8 +16,6 @@ openwrt_cp_engine: "chilli"
 # Motori CP per cui generare una build separata quando openwrt_cp_variants: true
 openwrt_cp_engines:
   - "chilli"
-# Porta uhttpd delle pagine del portale uspot (LuCI resta sulla 80)
-uspot_portal_port: 3990
 openwrt_vpn: "NONE"
 
 # Alias accettati per le varianti VPN (chiave in minuscolo -> nome canonico).
