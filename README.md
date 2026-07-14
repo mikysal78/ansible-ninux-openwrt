@@ -18,7 +18,8 @@ Sistema di build automatizzato per firmware **OpenWrt** per i nodi della rete me
 10. [OpenWISP Firmware Upgrader](#openwisp-firmware-upgrader)
 11. [GitHub Release](#github-release)
 12. [Struttura dei firmware prodotti](#struttura-dei-firmware-prodotti)
-13. [Troubleshooting](#troubleshooting)
+13. [Test e CI](#test-e-ci)
+14. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -756,6 +757,71 @@ output/
         └── CaptivePortal-uspot/     <- uspot (build separata)
             └── VPN-*/...
 ```
+
+---
+
+## Test e CI
+
+Su ogni push e pull request, GitHub Actions (`.github/workflows/ci.yml`) esegue
+lint e test. **La compilazione vera resta su Jenkins**: un firmware OpenWrt da
+sorgenti sono ore di build e decine di GB, fuori dalla portata di un runner
+GitHub (14 GB di disco). Quello che la CI prova è tutto il resto — cioè dove
+sono nati gli errori veri: quali pacchetti finiscono in quale variante, quali
+file di config entrano nell'immagine, e cosa succede sul controller OpenWISP.
+
+### Cosa gira
+
+| Job | Cosa fa |
+|-----|---------|
+| `lint` | `yamllint`, `ansible-lint`, `--syntax-check` di ogni playbook, `shellcheck` sugli uci-defaults e sugli script di setup |
+| `test` | Molecule: esegue il ruolo **per davvero** su un device simulato, poi verifica firmware e controller. Più il controllo che un'org di esempio non sia compilabile |
+
+### Come funziona la simulazione
+
+Il ruolo gira integralmente (overlay, feeds, `.config`, artefatti, upload):
+sono finti solo i due pezzi impossibili da avere in CI.
+
+- **Toolchain OpenWrt** (`molecule/default/files/openwrt-stub/`) — un `Makefile`
+  che non compila niente ma scrive **dentro il finto firmware il `.config`
+  assemblato**. Così i test verificano quali pacchetti sarebbero davvero finiti
+  nell'immagine, senza compilare.
+- **Controller OpenWISP** (`molecule/default/files/mock_openwisp.py`) — un mock
+  in ascolto su `127.0.0.1:8099` che implementa gli endpoint usati dal ruolo e
+  parte già popolato con 4 versioni preesistenti. Riproduce anche il `400` su
+  immagine duplicata, che è il motivo per cui le build vanno sostituite.
+
+Vengono compilate tre varianti di un solo device (`glinet_gl-mt300n-v2`): nessuna
+VPN senza portale, il caso reale di basilicata (**uspot + WireGuard con VXLAN**)
+e **Dual + chilli**. Le regole verificate sono quelle del progetto:
+
+- chilli e uspot non stanno mai nella stessa immagine;
+- i config di captive portal e VPN entrano **solo** nella variante che li usa
+  (in passato `/etc/config/chilli` finiva in *tutte* le immagini);
+- nel firmware non ci sono uci-defaults di rete né i pacchetti autoip: mesh e
+  portale li configura OpenWISP con i suoi template;
+- sul controller restano **solo le ultime 3 versioni**, e ricompilare la stessa
+  versione la **sostituisce** invece di lasciare online il firmware vecchio.
+
+L'ultima è la più importante: un errore nella retention cancella lo storico dei
+firmware dal controller. Il test lo intercetta.
+
+### Lanciarli in locale
+
+```bash
+python3 -m venv .venv && . .venv/bin/activate
+pip install -r requirements-dev.txt
+
+molecule test        # test completi (~1 minuto, nessun Docker, nessuna rete)
+ansible-lint         # lint dei playbook
+yamllint .
+```
+
+Molecule usa il driver `default`: gira su localhost, non serve Docker. La work
+dir dei test sta nella directory effimera di Molecule, il repo non viene toccato.
+
+Per aggiungere una variante ai test basta aggiungerla a `t_variants` in
+`molecule/default/vars/main.yml` e le attese corrispondenti in
+`molecule/default/verify.yml`.
 
 ---
 

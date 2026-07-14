@@ -166,6 +166,19 @@ Workspace : ${WORKSPACE}
                     }
                     args << "--vault-password-file ${VAULT_PASS_FILE}"
                     sh args.join(' ')
+
+                    // Un upload OpenWISP fallito (es. controller irraggiungibile) non
+                    // fa piu' fallire la build: il firmware resta compilato, archiviato
+                    // e pubblicato. Qui la build diventa UNSTABLE (gialla) cosi' non
+                    // passa inosservato che sul controller manca il firmware nuovo.
+                    def uploadFailed = "${WORKSPACE}/output/.openwisp-upload-failed"
+                    if (fileExists(uploadFailed)) {
+                        currentBuild.result = 'UNSTABLE'
+                        echo "=== ATTENZIONE: upload OpenWISP fallito per queste varianti ==="
+                        echo readFile(uploadFailed).trim()
+                        echo "I firmware sono stati compilati e archiviati: vanno ricaricati " +
+                             "su ${params.OPENWISP_URL ?: 'OpenWISP'} quando il controller torna raggiungibile."
+                    }
                 }
             }
         }

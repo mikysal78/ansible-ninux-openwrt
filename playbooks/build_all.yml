@@ -27,6 +27,13 @@
           Usa un'org reale, es. -e openwrt_org=basilicata, oppure creane una nuova
           (vedi README, sezione "Aggiungere device e organizzazioni").
 
+    # La workspace Jenkins sopravvive tra un job e l'altro: senza questo, un
+    # upload fallito una volta marcherebbe UNSTABLE anche le build successive.
+    - name: Azzera la segnalazione degli upload OpenWISP falliti
+      ansible.builtin.file:
+        path: "{{ openwrt_output_dir }}/.openwisp-upload-failed"
+        state: absent
+
     - name: Scopri device disponibili per org
       ansible.builtin.find:
         paths: "{{ openwrt_work_dir }}/config/organizations/{{ openwrt_org }}"
@@ -109,6 +116,7 @@
   post_tasks:
     - name: Pulizia finale
       ansible.builtin.shell: |
+        set -o pipefail
         echo "=== Spazio prima della pulizia ==="
         df -h {{ openwrt_work_dir }} | tail -1
         du -sh {{ openwrt_work_dir }}/build 2>/dev/null || true
@@ -150,16 +158,19 @@
       changed_when: false
       when: openwrt_ccache_enabled | bool
 
-    - name: ccache stats
+    - name: Statistiche ccache
       ansible.builtin.debug:
         msg: "{{ _ccache_final.stdout_lines }}"
       when: openwrt_ccache_enabled | bool
 
     - name: Riepilogo firmware prodotti
       ansible.builtin.shell: |
+        set -o pipefail
         find {{ openwrt_output_dir }} -type f \
           \( -name "*-sysupgrade*" -o -name "*-factory*" -o -name "*.img.gz" \) \
           | sort
+      args:
+        executable: /bin/bash
       register: _firmware_list
       changed_when: false
 

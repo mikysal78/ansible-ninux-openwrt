@@ -101,6 +101,12 @@ openwisp_password: ""
 openwisp_org_slug: "{{ openwrt_org }}"
 openwisp_org_id: ""
 openwisp_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"
+# Se l'upload fallisce (controller giu'/irraggiungibile) la build NON fallisce:
+# il firmware resta compilato e archiviato, e la variante viene annotata in
+# output/.openwisp-upload-failed (Jenkins la legge e marca la build UNSTABLE).
+# true = un upload fallito fa fallire tutta la pipeline, come prima.
+openwisp_upload_fatal: false
+
 # Sostituisci la build se la versione esiste gia' (evita firmware vecchio online)
 openwisp_replace_build: true
 # Quante versioni OpenWrt tenere su OpenWISP per device (0 = retention disattivata)

@@ -158,6 +158,12 @@ openwisp_org_id: !vault |
 # Nome della category firmware in OpenWISP
 openwisp_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"
 
+# Un upload fallito (controller giu' o irraggiungibile) NON fa fallire la build:
+# il firmware viene comunque archiviato e pubblicato, la variante non caricata
+# finisce in output/.openwisp-upload-failed e Jenkins marca la build UNSTABLE.
+# Mettere true per tornare a far fallire tutta la pipeline.
+openwisp_upload_fatal: false
+
 # Se la build con la stessa versione esiste gia' su OpenWISP, la sostituisce
 # (la cancella e la ricrea). Con false verrebbe riusata e il firmware caricato
 # resterebbe quello VECCHIO: l'upload di un'immagine duplicata risponde 400.

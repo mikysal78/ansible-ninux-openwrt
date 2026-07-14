@@ -3,3 +3,6 @@ build/
 output/
 .ccache/
 *.retry
+
+# Ambiente di test (requirements-dev.txt, molecule)
+.venv/

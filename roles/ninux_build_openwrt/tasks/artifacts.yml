@@ -112,6 +112,7 @@
   ansible.builtin.file:
     path: "{{ openwrt_src_dir }}/bin"
     state: "{{ item }}"
+    mode: "0755"
   loop: [absent, directory]
 
 - name: Verifica file copiati in output/
@@ -147,8 +148,43 @@
     - (openwisp_orgs[openwrt_org] is not defined or
        openwisp_orgs[openwrt_org].api_token is not defined)
 
+# L'upload NON deve buttare via la compilazione: se il controller e' irraggiungibile
+# (e' gia' successo: server giu', errore "No route to host") un fallimento qui
+# faceva fallire l'intera pipeline DOPO la build, saltando archiviazione e release
+# GitHub. Il firmware era buono e veniva perso.
+# Qui l'errore viene catturato, lasciato scritto in un file di segnalazione, e la
+# build prosegue: il Jenkinsfile legge quel file e marca la build UNSTABLE.
+# Con openwisp_upload_fatal: true si torna al comportamento di prima.
 - name: Upload firmware su OpenWISP Firmware Upgrader
-  ansible.builtin.include_tasks: openwisp_upload.yml
   when:
     - openwisp_upload_enabled | bool
     - _ow_token_global is defined
+  block:
+    - name: Esegui l'upload su OpenWISP
+      ansible.builtin.include_tasks: openwisp_upload.yml
+
+  rescue:
+    - name: "[OpenWISP] Upload fallito: registra la variante e prosegui"
+      ansible.builtin.lineinfile:
+        path: "{{ openwrt_output_dir }}/.openwisp-upload-failed"
+        line: >-
+          {{ openwrt_org }}/{{ openwrt_target }} VPN={{ _vpn }}
+          CP={{ openwrt_cp_engine if openwrt_captive_portal | bool else 'NONE' }}
+          — {{ ansible_failed_task.name | default('?') }}:
+          {{ ansible_failed_result.msg | default('errore sconosciuto') | truncate(200) }}
+        create: true
+        mode: "0644"
+
+    - name: "[OpenWISP] Avviso: firmware NON caricato sul controller"
+      ansible.builtin.debug:
+        msg: >-
+          ATTENZIONE: upload su {{ openwisp_url }} fallito per
+          {{ openwrt_target }} VPN={{ _vpn }}. Il firmware e' stato comunque
+          compilato e archiviato: va ricaricato quando il controller torna
+          raggiungibile. Dettaglio:
+          {{ ansible_failed_result.msg | default('errore sconosciuto') | truncate(300) }}
+
+    - name: "[OpenWISP] Fallisci comunque (openwisp_upload_fatal: true)"
+      ansible.builtin.fail:
+        msg: "Upload OpenWISP fallito e openwisp_upload_fatal e' true."
+      when: openwisp_upload_fatal | default(false) | bool

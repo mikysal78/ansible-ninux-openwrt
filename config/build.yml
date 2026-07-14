@@ -154,6 +154,11 @@ openwisp_org_id: ""
 # Nome della category firmware in OpenWISP (creata se non esiste)
 openwisp_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"
 
+# Un upload fallito non fa fallire la build (il firmware resta archiviato):
+# la variante non caricata finisce in output/.openwisp-upload-failed e Jenkins
+# marca la build UNSTABLE. true = fallisce tutta la pipeline, come prima.
+openwisp_upload_fatal: false
+
 # Sostituisci la build se la versione esiste gia' su OpenWISP
 openwisp_replace_build: true
 
