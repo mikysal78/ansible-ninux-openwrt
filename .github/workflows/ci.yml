@@ -70,6 +70,15 @@ jobs:
       - name: Molecule (un device, tre varianti, OpenWISP mock)
         run: molecule test
 
+      # cleanup.yml deve funzionare anche su una workdir vuota o parziale
+      # (workspace Jenkins al primo giro, .ccache/ mai creata): una regressione
+      # qui e' gia' successa con pipefail + du su directory mancante.
+      - name: cleanup.yml su una workdir vuota
+        run: |
+          mkdir -p "$RUNNER_TEMP/cleanup-vuota"
+          ansible-playbook playbooks/cleanup.yml \
+            -e openwrt_work_dir="$RUNNER_TEMP/cleanup-vuota"
+
       # Le org di esempio (default) non devono essere compilabili: i loro file
       # servono da template per creare una nuova organizzazione.
       - name: Una build su un'org di esempio deve essere rifiutata

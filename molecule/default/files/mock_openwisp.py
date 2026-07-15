@@ -156,13 +156,19 @@ class Handler(BaseHTTPRequestHandler):
 
             # OpenWISP rifiuta con 400 un'immagine dello stesso 'type' gia'
             # presente sulla build: senza sostituzione resterebbe online il
-            # firmware VECCHIO.
+            # firmware VECCHIO. Il messaggio replica quello vero di DRF: il
+            # ruolo distingue il duplicato dagli altri 400 cercando 'unique'.
             duplicate = any(
                 i["build"] == build_id and i["type"] == image_type
                 for i in STATE["images"]
             )
             if duplicate:
-                self._reply(400, {"type": ["Image already exists for this build."]})
+                self._reply(
+                    400,
+                    {"non_field_errors": [
+                        "The fields build, type must make a unique set."
+                    ]},
+                )
                 return
 
             image = {

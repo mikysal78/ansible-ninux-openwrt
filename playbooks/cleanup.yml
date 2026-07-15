@@ -33,7 +33,9 @@
         echo "=== Spazio output/ ==="
         du -sh {{ openwrt_work_dir }}/output 2>/dev/null || echo "  (vuoto)"
         echo "=== Totale ==="
-        du -sh {{ openwrt_work_dir }}/build {{ openwrt_work_dir }}/.ccache {{ openwrt_work_dir }}/output 2>/dev/null | tail -1
+        # || true: du esce con 1 se una delle directory manca (es. .ccache/)
+        # e con pipefail farebbe fallire tutta la pulizia
+        du -sh {{ openwrt_work_dir }}/build {{ openwrt_work_dir }}/.ccache {{ openwrt_work_dir }}/output 2>/dev/null | tail -1 || true
       args:
         executable: /bin/bash
       register: _before

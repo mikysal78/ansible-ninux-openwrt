@@ -271,32 +271,66 @@ Workspace : ${WORKSPACE}
 
                             def notes = "Build Jenkins #${env.BUILD_NUMBER}\\nOrg: ${org}\\nOpenWrt: ${version}\\nDevice: ${device}\\nVarianti: ${variants}"
 
-                            // Crea release per questo device via python3 per gestire JSON
+                            // Crea la release; se il tag esiste gia' (HTTP 422,
+                            // es. rebuild della stessa versione) riusa quella
+                            // esistente aggiornandone titolo e note.
                             def releaseId = sh(
                                 script: """python3 -c "
-import urllib.request, json, os, sys
-data = json.dumps({
+import urllib.request, urllib.error, json, os, sys
+
+API = 'https://api.github.com/repos/${repo}/releases'
+HDRS = {
+    'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
+    'Content-Type': 'application/json'
+}
+payload = {
     'tag_name': '${tag}',
     'name': 'Ninux OpenWrt ${version} | ${org} | ${device}',
     'body': '${notes}',
     'draft': False,
     'prerelease': '${prerel}' == 'true'
-}).encode()
-req = urllib.request.Request(
-    'https://api.github.com/repos/${repo}/releases',
-    data=data,
-    headers={
-        'Authorization': 'Bearer ' + os.environ['GH_TOKEN'],
-        'Content-Type': 'application/json'
-    }
-)
-resp = urllib.request.urlopen(req)
-print(json.loads(resp.read())['id'])
+}
+
+try:
+    resp = urllib.request.urlopen(urllib.request.Request(
+        API, data=json.dumps(payload).encode(), headers=HDRS))
+    print(json.loads(resp.read())['id'])
+except urllib.error.HTTPError as e:
+    if e.code != 422:
+        raise
+    # tag gia' esistente: recupera la release e aggiorna nome/note
+    resp = urllib.request.urlopen(urllib.request.Request(
+        'https://api.github.com/repos/${repo}/releases/tags/${tag}', headers=HDRS))
+    rid = json.loads(resp.read())['id']
+    urllib.request.urlopen(urllib.request.Request(
+        API + '/' + str(rid), data=json.dumps(payload).encode(),
+        headers=HDRS, method='PATCH'))
+    print(rid)
 " """,
                                 returnStdout: true
                             ).trim()
 
-                            echo "Release creata: ${tag}  (ID=${releaseId})"
+                            echo "Release: ${tag}  (ID=${releaseId})"
+
+                            // Asset gia' presenti sulla release (rebuild): vanno
+                            // sostituiti, altrimenti l'upload risponde 422 e sulla
+                            // release resterebbe il firmware VECCHIO.
+                            def oldAssetsRaw = sh(
+                                script: """python3 -c "
+import urllib.request, json, os
+req = urllib.request.Request(
+    'https://api.github.com/repos/${repo}/releases/${releaseId}/assets?per_page=100',
+    headers={'Authorization': 'Bearer ' + os.environ['GH_TOKEN']})
+for a in json.loads(urllib.request.urlopen(req).read()):
+    print(str(a['id']) + '\\t' + a['name'])
+" """,
+                                returnStdout: true
+                            ).trim()
+                            def oldAssets = [:]
+                            oldAssetsRaw.split('\n').each { line ->
+                                def parts = line.trim().split('\t')
+                                if (parts.size() == 2) oldAssets[parts[1]] = parts[0]
+                            }
 
                             // Upload firmware di questo device
                             // Struttura asset: Standard__VPN-NO__openwrt-x86-64-...-efi.img.gz
@@ -319,6 +353,12 @@ print(json.loads(resp.read())['id'])
                                 def assetName = fp
                                     .replace("${deviceDir}/", '')
                                     .replaceAll('/', '__')
+
+                                if (oldAssets[assetName]) {
+                                    sh """curl -s -o /dev/null -X DELETE \
+  -H "Authorization: Bearer \$GH_TOKEN" \
+  "https://api.github.com/repos/${repo}/releases/assets/${oldAssets[assetName]}" """
+                                }
 
                                 def code = sh(
                                     script: """curl -s -o /dev/null -w "%{http_code}" \

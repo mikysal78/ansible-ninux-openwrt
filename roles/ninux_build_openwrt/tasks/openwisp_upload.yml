@@ -223,18 +223,27 @@
       Upload saltato per questa variante.
   when: _ow_sysupgrade_files.files | length == 0
 
+# L'output e' "corpo della risposta + ultima riga = http code" (-w "\n%{http_code}").
+# Un 400 e' accettabile SOLO se e' un duplicato vero ("unique set" nel corpo):
+# qualsiasi altro 400 (es. 'type' dell'immagine non riconosciuto dal controller)
+# e' un upload NON riuscito e deve fallire, non finire nel conteggio dei
+# "gia' presenti" — e' successo con zyxel_nwa50ax-pro: build nuova, 400,
+# e il firmware non era mai arrivato sul controller.
 - name: "[OpenWISP] Carica sysupgrade"
   ansible.builtin.command:
     cmd: >-
-      curl -s -o /tmp/ow_upload_response.json -w "%{http_code}"
-      -X POST
+      curl -s -X POST
       -H "Authorization: Bearer {{ _ow_token }}"
       -F "file=@{{ item.path }}"
       -F "type={{ item.path | basename | regex_replace('^openwrt-', '') }}"
+      -w "\n%{http_code}"
       {{ openwisp_url }}/api/v1/firmware-upgrader/build/{{ _ow_build_id }}/image/
   register: _ow_upload_result
-  changed_when: _ow_upload_result.stdout | int == 201
-  failed_when: _ow_upload_result.stdout | int not in [201, 400]
+  changed_when: _ow_upload_result.stdout_lines[-1] | int == 201
+  failed_when: >-
+    _ow_upload_result.stdout_lines[-1] | int not in [201, 400]
+    or (_ow_upload_result.stdout_lines[-1] | int == 400
+        and 'unique' not in _ow_upload_result.stdout | lower)
   loop: "{{ _ow_sysupgrade_files.files }}"
   loop_control:
     label: "{{ item.path | basename }}"
@@ -245,10 +254,12 @@
   ansible.builtin.debug:
     msg: >-
       Caricati {{ _ow_upload_result.results
-        | selectattr('stdout', 'equalto', '201') | list | length }}
+        | map(attribute='stdout_lines') | map('last')
+        | select('equalto', '201') | list | length }}
       sysupgrade su Build {{ _ow_build_id }}
       ({{ _ow_upload_result.results
-        | selectattr('stdout', 'equalto', '400') | list | length }} già presenti)
+        | map(attribute='stdout_lines') | map('last')
+        | select('equalto', '400') | list | length }} già presenti)
   when: _ow_sysupgrade_files.files | length > 0
 
 # ---- 6b. Retention: tieni solo le ultime N versioni OpenWrt -------
