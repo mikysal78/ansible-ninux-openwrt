@@ -19,13 +19,13 @@ pipeline {
         )
         booleanParam(
             name: 'CAPTIVE_PORTAL_VARIANTS',
-            defaultValue: false,
-            description: 'Compila ogni variante sia con che senza Captive Portal'
+            defaultValue: true,
+            description: 'Compila ogni variante sia con che senza Captive Portal (allineato a openwrt_cp_variants in ninux.yml)'
         )
         choice(
             name: 'CAPTIVE_PORTAL_ENGINE',
-            choices: ['chilli', 'uspot', 'ALL'],
-            description: 'Motore Captive Portal: build separate, mai chilli e uspot insieme (ALL = una build per motore)'
+            choices: ['config', 'chilli', 'uspot', 'ALL'],
+            description: 'Motore Captive Portal: "config" usa ninux.yml (incl. override per org, es. basilicata=uspot); gli altri forzano il motore. Build separate, mai chilli e uspot insieme (ALL = una build per motore)'
         )
         booleanParam(
             name: 'SKIP_DEPS',
@@ -102,14 +102,19 @@ pipeline {
                     if (!configs) error "Nessun .config in ${configDir}"
                     def nDev  = configs.split('\n').size()
                     def nVpn  = params.VPN_VARIANTS == 'ALL' ? 4 : 1
+                    // "config": i motori li decide ninux.yml (di solito 1 per org),
+                    // il totale esatto lo stampa il playbook nel suo Piano di build
                     def nEng  = params.CAPTIVE_PORTAL_ENGINE == 'ALL' ? 2 : 1
                     def nCp   = params.CAPTIVE_PORTAL_VARIANTS ? 1 + nEng : 1
                     def total = nDev * nVpn * nCp
+                    def engineLabel = params.CAPTIVE_PORTAL_VARIANTS
+                        ? (params.CAPTIVE_PORTAL_ENGINE == 'config' ? 'da ninux.yml (override per org)' : params.CAPTIVE_PORTAL_ENGINE)
+                        : 'nessuno'
                     echo """
 === Piano di build ===
 Device    : ${configs.replaceAll('\n', ', ')}
 Totale    : ${total} firmware (${nDev} dev x ${nVpn} VPN x ${nCp} CP)
-CP engine : ${params.CAPTIVE_PORTAL_VARIANTS ? params.CAPTIVE_PORTAL_ENGINE : 'nessuno'}
+CP engine : ${engineLabel}
 Workspace : ${WORKSPACE}
 """
                     env.DISCOVERED_DEVICES = configs.replaceAll('\n', ', ')
@@ -154,7 +159,10 @@ Workspace : ${WORKSPACE}
                         args << "-e '{\"openwrt_vpn_variants\": [\"${params.VPN_VARIANTS}\"], \"openwrt_org_vpn_variants\": {}}'"
                     }
                     args << "-e openwrt_cp_variants=${params.CAPTIVE_PORTAL_VARIANTS}"
-                    if (params.CAPTIVE_PORTAL_VARIANTS) {
+                    // "config" = motori da ninux.yml (openwrt_cp_engines + override
+                    // per org): non passare nulla, cosi' basilicata compila uspot.
+                    // Un motore esplicito forza la scelta e azzera l'override org.
+                    if (params.CAPTIVE_PORTAL_VARIANTS && params.CAPTIVE_PORTAL_ENGINE != 'config') {
                         def engines = params.CAPTIVE_PORTAL_ENGINE == 'ALL' ? ['chilli', 'uspot'] : [params.CAPTIVE_PORTAL_ENGINE]
                         def enginesJson = engines.collect { "\"${it}\"" }.join(', ')
                         args << "-e '{\"openwrt_cp_engines\": [${enginesJson}], \"openwrt_org_cp_engines\": {}}'"

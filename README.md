@@ -278,8 +278,8 @@ Pipeline e Git sono già inclusi nei plugin suggeriti.
 | `OPENWRT_ORG` | `default` | Organizzazione Ninux |
 | `OPENWRT_VERSION` | `v25.12.5` | Tag OpenWrt |
 | `VPN_VARIANTS` | `ALL` | `ALL` / `NONE` / `ZeroTier` / `WireGuard` / `Dual` |
-| `CAPTIVE_PORTAL_VARIANTS` | false | Compila anche varianti con CP |
-| `CAPTIVE_PORTAL_ENGINE` | `chilli` | Motore CP: `chilli` / `uspot` / `ALL` (build separate) |
+| `CAPTIVE_PORTAL_VARIANTS` | true | Compila anche varianti con CP (come `openwrt_cp_variants` in ninux.yml) |
+| `CAPTIVE_PORTAL_ENGINE` | `config` | Motore CP: `config` usa ninux.yml (override per org, es. basilicata=uspot); `chilli` / `uspot` / `ALL` lo forzano (build separate) |
 | `SKIP_DEPS` | false | Salta `apt install` (dopo il primo run) |
 | `TMPFS_ENABLED` | true | RAM disk per `tmp/` (+30% velocità) |
 | `TMPFS_SIZE` | `8G` | Dimensione tmpfs |
