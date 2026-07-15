@@ -17,6 +17,13 @@
     _ow_token: "{{ _ow_token_global }}"
   no_log: true
 
+# I set_fact sopravvivono tra le varianti: senza reset, se questa variante
+# fallisce PRIMA dell'upload, la diagnostica nel rescue mostrerebbe le
+# risposte della variante precedente.
+- name: "[OpenWISP] Azzera l'esito upload della variante precedente"
+  ansible.builtin.set_fact:
+    _ow_upload_result: {}
+
 # ---- 2. Risolvi UUID organizzazione ------------------------------
 - name: "[OpenWISP] Cerca organizzazione per slug"
   ansible.builtin.uri:
@@ -239,11 +246,16 @@
       -w "\n%{http_code}"
       {{ openwisp_url }}/api/v1/firmware-upgrader/build/{{ _ow_build_id }}/image/
   register: _ow_upload_result
-  changed_when: _ow_upload_result.stdout_lines[-1] | int == 201
+  vars:
+    # ultima riga dello stdout = http code; default a '' se curl non ha
+    # prodotto output (errore di rete): [-1] su lista vuota esploderebbe
+    _up_code: "{{ _ow_upload_result.stdout_lines | default(['']) | last }}"
+  changed_when: _up_code == '201'
   failed_when: >-
-    _ow_upload_result.stdout_lines[-1] | int not in [201, 400]
-    or (_ow_upload_result.stdout_lines[-1] | int == 400
-        and 'unique' not in _ow_upload_result.stdout | lower)
+    _ow_upload_result.rc | default(1) != 0
+    or _up_code not in ['201', '400']
+    or (_up_code == '400'
+        and 'unique' not in _ow_upload_result.stdout | default('') | lower)
   loop: "{{ _ow_sysupgrade_files.files }}"
   loop_control:
     label: "{{ item.path | basename }}"

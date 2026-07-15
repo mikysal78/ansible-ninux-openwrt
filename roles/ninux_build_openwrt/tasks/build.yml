@@ -79,9 +79,15 @@
 # ignore_errors: true perche' pacchetti non critici (es. intel-microcode)
 # possono fallire senza compromettere i firmware reali.
 # Il task successivo verifica che i firmware siano stati prodotti.
+# Terzo tentativo dopo make clean: ripara gli alberi di build corrotti da
+# run interrotti (es. build #65: mkdir "File exists" dentro ipkg-install di
+# ca-certificates, irrecuperabile senza pulizia). Costa una ricompilazione
+# piena (~30 min, meno con ccache) ma salva la pipeline.
 - name: Compila firmware (parallelo, fallback verbose)
   ansible.builtin.shell: |
-    make -j{{ _make_jobs }} || make -j4 V=s
+    make -j{{ _make_jobs }} \
+      || make -j4 V=s \
+      || { echo '=== make fallito: make clean e ultimo tentativo ==='; make clean; make -j{{ _make_jobs }}; }
   args:
     chdir: "{{ openwrt_src_dir }}"
     executable: /bin/bash

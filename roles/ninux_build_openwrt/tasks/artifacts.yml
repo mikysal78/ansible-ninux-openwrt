@@ -164,14 +164,38 @@
       ansible.builtin.include_tasks: openwisp_upload.yml
 
   rescue:
+    # Il corpo della risposta HTTP non contiene il token (che sta solo nella
+    # riga di comando, coperta da no_log): si puo' mostrare in chiaro.
+    - name: "[OpenWISP] Componi il dettaglio dell'errore"
+      ansible.builtin.set_fact:
+        _ow_fail_detail: >-
+          {{
+            (_ow_upload_result.results | default([])
+             | selectattr('failed', 'defined') | selectattr('failed')
+             | map(attribute='stdout') | map('default', '(nessuna risposta)')
+             | map('truncate', 200) | list | join(' | '))
+            or (ansible_failed_task.name | default('?') ~ ': ' ~
+                (ansible_failed_result.msg | default('errore sconosciuto') | truncate(200)))
+          }}
+
+    - name: "[OpenWISP] Risposte del controller per i file rifiutati"
+      ansible.builtin.debug:
+        msg: >-
+          {{ item.item.path | basename }} → HTTP
+          {{ item.stdout_lines | default(['?']) | last }} —
+          {{ (item.stdout_lines | default(['(nessuna risposta)']))[:-1] | join(' ') | truncate(400) }}
+      loop: "{{ _ow_upload_result.results | default([]) }}"
+      loop_control:
+        label: "{{ item.item.path | default('?') | basename }}"
+      when: item.failed | default(false)
+
     - name: "[OpenWISP] Upload fallito: registra la variante e prosegui"
       ansible.builtin.lineinfile:
         path: "{{ openwrt_output_dir }}/.openwisp-upload-failed"
         line: >-
           {{ openwrt_org }}/{{ openwrt_target }} VPN={{ _vpn }}
           CP={{ openwrt_cp_engine if openwrt_captive_portal | bool else 'NONE' }}
-          — {{ ansible_failed_task.name | default('?') }}:
-          {{ ansible_failed_result.msg | default('errore sconosciuto') | truncate(200) }}
+          — {{ _ow_fail_detail }}
         create: true
         mode: "0644"
 
@@ -181,8 +205,7 @@
           ATTENZIONE: upload su {{ openwisp_url }} fallito per
           {{ openwrt_target }} VPN={{ _vpn }}. Il firmware e' stato comunque
           compilato e archiviato: va ricaricato quando il controller torna
-          raggiungibile. Dettaglio:
-          {{ ansible_failed_result.msg | default('errore sconosciuto') | truncate(300) }}
+          raggiungibile. Dettaglio: {{ _ow_fail_detail }}
 
     - name: "[OpenWISP] Fallisci comunque (openwisp_upload_fatal: true)"
       ansible.builtin.fail:

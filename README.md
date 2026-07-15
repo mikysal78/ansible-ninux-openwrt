@@ -684,6 +684,61 @@ Build → artifacts.yml → openwisp_upload.yml
   6. (opzionale) Batch upgrade
 ```
 
+Un upload fallito **non** fa fallire la build: la variante finisce in
+`output/.openwisp-upload-failed` con il codice HTTP e la risposta del
+controller, e Jenkins marca la build UNSTABLE (gialla).
+
+### Board non riconosciute dal controller (upload rifiutato con 400)
+
+Il campo `type` dell'immagine deve essere tra quelli che il controller conosce
+(la sua mappa hardware). Se la board manca — o OpenWrt ne ha cambiato il nome
+file — l'upload risponde `400` e il firmware **non viene caricato**: la build
+resta vuota su OpenWISP anche se su Jenkins è tutto verde.
+
+È successo con i device basilicata: dei 6 solo `x86_64` combaciava. Il
+controller conosceva `gl-mt300n-v2` (nome vecchio, oggi `glinet_gl-mt300n-v2`),
+si aspettava `sysupgrade.img` per il Linksys (oggi `.bin`), e non aveva affatto
+TOTOLINK X5000R, TP-Link C2600 e Zyxel NWA50AX Pro.
+
+Si risolve **sul controller**, aggiungendo le board mancanti in
+`settings.py` di OpenWISP:
+
+```python
+OPENWISP_CUSTOM_OPENWRT_IMAGES = (
+    ('ramips-mt76x8-glinet_gl-mt300n-v2-squashfs-sysupgrade.bin', {
+        'label': 'GL.iNet GL-MT300N-V2',
+        'boards': ('GL.iNet GL-MT300N-V2',),
+    }),
+    ('mvebu-cortexa9-linksys_wrt3200acm-squashfs-sysupgrade.bin', {
+        'label': 'Linksys WRT3200ACM',
+        'boards': ('Linksys WRT3200ACM',),
+    }),
+    ('ramips-mt7621-totolink_x5000r-squashfs-sysupgrade.bin', {
+        'label': 'TOTOLINK X5000R',
+        'boards': ('TOTOLINK X5000R',),
+    }),
+    ('ipq806x-generic-tplink_c2600-squashfs-sysupgrade.bin', {
+        'label': 'TP-Link Archer C2600',
+        'boards': ('TP-Link Archer C2600',),
+    }),
+    ('mediatek-filogic-zyxel_nwa50ax-pro-squashfs-sysupgrade.bin', {
+        'label': 'Zyxel NWA50AX Pro',
+        'boards': ('Zyxel NWA50AX Pro',),
+    }),
+)
+```
+
+Poi riavviare OpenWISP. I valori in `boards` devono corrispondere al modello
+riportato dai device registrati (admin → Devices → colonna *Hardware/Board*):
+se un upgrade non parte pur con l'immagine caricata, è quasi sempre questo
+campo che non combacia. Per verificare i `type` accettati dal controller:
+
+```bash
+curl -s -X OPTIONS -H "Authorization: Bearer $TOKEN" \
+  https://openwisp.ninux-nnxx.it/api/v1/firmware-upgrader/build/<build-id>/image/ \
+  | python3 -c "import json,sys; [print(c['value']) for c in json.load(sys.stdin)['actions']['POST']['type']['choices']]"
+```
+
 ---
 
 ## GitHub Release
