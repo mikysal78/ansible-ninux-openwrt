@@ -50,6 +50,16 @@
     mode: "0755"
   when: _openwisp_enabled | bool
 
+# La staging root_files sopravvive tra le build (clone_ninux copia senza purge):
+# senza questa rimozione, un openwisp generato da una build precedente resta e,
+# se la generazione qui sotto viene saltata (openwisp disabilitato per l'org),
+# finisce comunque cotto nel firmware con URL/secret VECCHI. Rimuovendolo sempre
+# prima, o viene rigenerato fresco (org abilitata) o resta assente.
+- name: Rimuovi /etc/config/openwisp residuo di build precedenti
+  ansible.builtin.file:
+    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/config/openwisp"
+    state: absent
+
 - name: Genera /etc/config/openwisp da template
   ansible.builtin.template:
     src: openwisp-config.j2
