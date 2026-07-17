@@ -123,6 +123,10 @@ openwisp_image_type_map:
   glinet_gl-mt300n-v2: "ramips-mt76x8-gl-mt300n-v2-squashfs-sysupgrade.bin"
   linksys_wrt3200acm: "mvebu-cortexa9-linksys_wrt3200acm-squashfs-sysupgrade.img"
   x86_64: "x86-64-generic-squashfs-combined-efi.img.gz"
+  # Custom su controller (OPENWISP_CUSTOM_OPENWRT_IMAGES, playbook openwisp2)
+  totolink_X5000R: "ramips-mt7621-totolink_x5000r-squashfs-sysupgrade.bin"
+  tplink_c2600: "ipq806x-generic-tplink_c2600-squashfs-sysupgrade.bin"
+  zyxel_nwa50ax-pro: "mediatek-filogic-zyxel_nwa50ax-pro-squashfs-sysupgrade.bin"
 
 # openwisp-config (agente sul firmware)
 # La configurazione per org è in ninux.yml (sezione openwisp_orgs)

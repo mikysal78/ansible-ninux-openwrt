@@ -191,12 +191,12 @@ openwisp_image_type_map:
   glinet_gl-mt300n-v2: "ramips-mt76x8-gl-mt300n-v2-squashfs-sysupgrade.bin"
   linksys_wrt3200acm: "mvebu-cortexa9-linksys_wrt3200acm-squashfs-sysupgrade.img"
   x86_64: "x86-64-generic-squashfs-combined-efi.img.gz"
-  # Non presenti nella hardware map ufficiale di OpenWISP: upload saltato finché
-  # non configuri OPENWISP_CUSTOM_OPENWRT_IMAGES sul controller con questi stessi
-  # `type`. Fatto quello, scommenta le righe qui sotto per attivarne l'upload.
-  # totolink_X5000R: "ramips-mt7621-totolink_x5000r-squashfs-sysupgrade.bin"
-  # tplink_c2600: "ipq806x-generic-tplink_c2600-squashfs-sysupgrade.bin"
-  # zyxel_nwa50ax-pro: "mediatek-filogic-zyxel_nwa50ax-pro-squashfs-sysupgrade.bin"
+  # Non presenti nella hardware map UFFICIALE di OpenWISP: abilitati tramite
+  # OPENWISP_CUSTOM_OPENWRT_IMAGES sul controller (playbook openwisp2). I `type`
+  # qui devono restare identici a quelli dichiarati là, altrimenti l'upload dà 400.
+  totolink_X5000R: "ramips-mt7621-totolink_x5000r-squashfs-sysupgrade.bin"
+  tplink_c2600: "ipq806x-generic-tplink_c2600-squashfs-sysupgrade.bin"
+  zyxel_nwa50ax-pro: "mediatek-filogic-zyxel_nwa50ax-pro-squashfs-sysupgrade.bin"
 
 # -----------------------------------------------------------------------------
 # OPENWISP-CONFIG (agente sul firmware)

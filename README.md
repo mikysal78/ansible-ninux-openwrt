@@ -739,6 +739,26 @@ curl -s -X OPTIONS -H "Authorization: Bearer $TOKEN" \
   | python3 -c "import json,sys; [print(c['value']) for c in json.load(sys.stdin)['actions']['POST']['type']['choices']]"
 ```
 
+**Lato repo** il `type` inviato in upload non è più derivato dal nome file, ma
+preso da `openwisp_image_type_map` (`config/build.yml`), che mappa ogni
+`openwrt_target` alla chiave attesa dal controller:
+
+```yaml
+openwisp_image_type_map:
+  glinet_gl-mt300n-v2: "ramips-mt76x8-gl-mt300n-v2-squashfs-sysupgrade.bin"
+  linksys_wrt3200acm: "mvebu-cortexa9-linksys_wrt3200acm-squashfs-sysupgrade.img"
+  x86_64: "x86-64-generic-squashfs-combined-efi.img.gz"
+  totolink_X5000R: "ramips-mt7621-totolink_x5000r-squashfs-sysupgrade.bin"
+  tplink_c2600: "ipq806x-generic-tplink_c2600-squashfs-sysupgrade.bin"
+  zyxel_nwa50ax-pro: "mediatek-filogic-zyxel_nwa50ax-pro-squashfs-sysupgrade.bin"
+```
+
+I primi tre usano le chiavi native di OpenWISP; gli ultimi tre esistono solo
+grazie a `OPENWISP_CUSTOM_OPENWRT_IMAGES` sul controller (playbook `openwisp2`):
+i `type` delle due parti devono restare identici. Un target assente dalla mappa
+viene saltato in upload e annotato in `output/.openwisp-unsupported` (build
+comunque verde).
+
 ---
 
 ## GitHub Release
