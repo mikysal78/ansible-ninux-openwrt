@@ -12,6 +12,11 @@ pipeline {
             defaultValue: 'v25.12.5',
             description: 'Tag OpenWrt'
         )
+        string(
+            name: 'DEVICES',
+            defaultValue: '',
+            description: 'Sottoinsieme device da compilare (comma-separated, es. "totolink_X5000R,linksys_wrt3200acm"). Vuoto = tutti i device dell\'org.'
+        )
         choice(
             name: 'VPN_VARIANTS',
             choices: ['ALL', 'NONE', 'ZeroTier', 'WireGuard', 'Dual'],
@@ -100,7 +105,7 @@ pipeline {
                         returnStdout: true
                     ).trim()
                     if (!configs) error "Nessun .config in ${configDir}"
-                    def nDev  = configs.split('\n').size()
+                    def nDev  = params.DEVICES?.trim() ? params.DEVICES.trim().split(',').size() : configs.split('\n').size()
                     def nVpn  = params.VPN_VARIANTS == 'ALL' ? 4 : 1
                     // "config": i motori li decide ninux.yml (di solito 1 per org),
                     // il totale esatto lo stampa il playbook nel suo Piano di build
@@ -157,6 +162,10 @@ Workspace : ${WORKSPACE}
                     if (params.VPN_VARIANTS != 'ALL') {
                         // svuota anche l'override per org, altrimenti vincerebbe sulla scelta esplicita
                         args << "-e '{\"openwrt_vpn_variants\": [\"${params.VPN_VARIANTS}\"], \"openwrt_org_vpn_variants\": {}}'"
+                    }
+                    if (params.DEVICES?.trim()) {
+                        def devs = params.DEVICES.trim().split(',').collect { "\"${it.trim()}\"" }.join(', ')
+                        args << "-e '{\"openwrt_only_targets\": [${devs}]}'"
                     }
                     args << "-e openwrt_cp_variants=${params.CAPTIVE_PORTAL_VARIANTS}"
                     // "config" = motori da ninux.yml (openwrt_cp_engines + override

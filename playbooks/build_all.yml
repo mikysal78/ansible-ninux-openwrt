@@ -55,6 +55,23 @@
              | map('regex_replace', '\.config$', '')
              | sort | list }}
 
+    # Filtro opzionale: compila solo un sottoinsieme di device (es. per test).
+    # Passato da Jenkins col parametro DEVICES -> -e openwrt_only_targets=[...].
+    - name: Filtra i device se openwrt_only_targets è definito
+      ansible.builtin.set_fact:
+        _discovered_targets: >-
+          {{ _discovered_targets | select('in', openwrt_only_targets) | list }}
+      when: openwrt_only_targets | default([]) | length > 0
+
+    - name: Fallisci se il filtro device non matcha nulla
+      ansible.builtin.fail:
+        msg: >-
+          openwrt_only_targets={{ openwrt_only_targets }} non matcha nessun
+          .config in config/organizations/{{ openwrt_org }}/
+      when:
+        - openwrt_only_targets | default([]) | length > 0
+        - _discovered_targets | length == 0
+
     - name: Calcola dimensione Captive Portal (none + un motore per build)
       ansible.builtin.set_fact:
         _cp_engines_org: >-
