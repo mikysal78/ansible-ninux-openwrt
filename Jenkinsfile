@@ -187,6 +187,16 @@ Workspace : ${WORKSPACE}
                         echo "I firmware sono stati compilati e archiviati: vanno ricaricati " +
                              "su ${params.OPENWISP_URL ?: 'OpenWISP'} quando il controller torna raggiungibile."
                     }
+
+                    // Target non presenti nella hardware map di OpenWISP: upload saltato
+                    // di proposito (non e' un errore, quindi la build resta SUCCESS).
+                    def owUnsupported = "${WORKSPACE}/output/.openwisp-unsupported"
+                    if (fileExists(owUnsupported)) {
+                        echo "=== INFO: target non supportati da OpenWISP (upload saltato) ==="
+                        echo readFile(owUnsupported).trim()
+                        echo "Per caricarli: aggiungi la voce in config/build.yml (openwisp_image_type_map) " +
+                             "e configura OPENWISP_CUSTOM_OPENWRT_IMAGES sul controller."
+                    }
                 }
             }
         }

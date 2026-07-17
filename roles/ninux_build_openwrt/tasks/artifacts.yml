@@ -155,10 +155,37 @@
 # Qui l'errore viene catturato, lasciato scritto in un file di segnalazione, e la
 # build prosegue: il Jenkinsfile legge quel file e marca la build UNSTABLE.
 # Con openwisp_upload_fatal: true si torna al comportamento di prima.
+# OpenWISP abbina device e firmware sul campo `type`, che deve essere una chiave
+# nota della sua hardware map. Un target senza voce in openwisp_image_type_map
+# darebbe 400 in upload: lo saltiamo e lo annotiamo, la build prosegue.
+- name: "[OpenWISP] Avviso se il target non è nella hardware map OpenWISP"
+  ansible.builtin.debug:
+    msg: >-
+      ATTENZIONE: target '{{ openwrt_target }}' non presente in
+      openwisp_image_type_map: OpenWISP non lo riconosce (upload saltato).
+      Per caricarlo, aggiungi la voce in config/build.yml E configura
+      OPENWISP_CUSTOM_OPENWRT_IMAGES sul controller.
+  when:
+    - openwisp_upload_enabled | bool
+    - _ow_token_global is defined
+    - openwisp_image_type_map[openwrt_target] is not defined
+
+- name: "[OpenWISP] Registra il target non supportato"
+  ansible.builtin.lineinfile:
+    path: "{{ openwrt_output_dir }}/.openwisp-unsupported"
+    line: "{{ openwrt_org }}/{{ openwrt_target }} — non in openwisp_image_type_map"
+    create: true
+    mode: "0644"
+  when:
+    - openwisp_upload_enabled | bool
+    - _ow_token_global is defined
+    - openwisp_image_type_map[openwrt_target] is not defined
+
 - name: Upload firmware su OpenWISP Firmware Upgrader
   when:
     - openwisp_upload_enabled | bool
     - _ow_token_global is defined
+    - openwisp_image_type_map[openwrt_target] is defined
   block:
     - name: Esegui l'upload su OpenWISP
       ansible.builtin.include_tasks: openwisp_upload.yml

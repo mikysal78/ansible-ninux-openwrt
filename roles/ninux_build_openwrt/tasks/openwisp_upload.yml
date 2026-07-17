@@ -236,13 +236,16 @@
 # e' un upload NON riuscito e deve fallire, non finire nel conteggio dei
 # "gia' presenti" — e' successo con zyxel_nwa50ax-pro: build nuova, 400,
 # e il firmware non era mai arrivato sul controller.
+# Il `type` NON è il nome file prodotto da OpenWrt (con versione e profilo
+# moderno): è la chiave della hardware map di OpenWISP, presa da
+# openwisp_image_type_map[openwrt_target]. Vedi config/build.yml.
 - name: "[OpenWISP] Carica sysupgrade"
   ansible.builtin.command:
     cmd: >-
       curl -s -X POST
       -H "Authorization: Bearer {{ _ow_token }}"
       -F "file=@{{ item.path }}"
-      -F "type={{ item.path | basename | regex_replace('^openwrt-', '') }}"
+      -F "type={{ openwisp_image_type_map[openwrt_target] }}"
       -w "\n%{http_code}"
       {{ openwisp_url }}/api/v1/firmware-upgrader/build/{{ _ow_build_id }}/image/
   register: _ow_upload_result
