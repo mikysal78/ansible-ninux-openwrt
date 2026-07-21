@@ -284,7 +284,7 @@ Pipeline e Git sono già inclusi nei plugin suggeriti.
 | `TMPFS_SIZE` | `8G` | Dimensione tmpfs |
 | `CCACHE_DIR` | `/var/cache/openwrt-ccache` | ccache persistente |
 | `CCACHE_SIZE` | `20G` | Dimensione massima ccache |
-| `OPENWISP_UPLOAD` | false | Upload su OpenWISP Firmware Upgrader |
+| `OPENWISP_UPLOAD` | `config` | Upload su OpenWISP: `config` segue ninux.yml, `on`/`off` forzano |
 | `OPENWISP_TRIGGER_UPGRADE` | false | Avvia batch upgrade OpenWISP |
 | `OPENWISP_URL` | `` | URL istanza OpenWISP Firmware Upgrader |
 
@@ -847,8 +847,15 @@ CaptivePortal_VPN-WireGuard_glinet_gl-mt300n-v2_openwrt-...-squashfs-sysupgrade.
 
 ### Attivazione da Jenkins
 
-Spunta il parametro **`GITHUB_RELEASE`** al lancio del job,
-oppure imposta `github_release_enabled: true` in `ninux.yml` per abilitarlo sempre.
+Imposta `github_release_enabled: true` in `ninux.yml` per abilitarlo sempre,
+oppure usa il parametro **`GITHUB_RELEASE`** al lancio del job: `config` segue
+ninux.yml, `on` e `off` lo forzano.
+
+> `GITHUB_RELEASE` e `OPENWISP_UPLOAD` erano booleani, ma un booleano non sa
+> dire "no": con `github_release_enabled: true` in `ninux.yml` la release
+> partiva comunque, anche a parametro deselezionato. Sono diventati a tre stati
+> per questo — una build di prova pubblicava firmware sul repo pubblico e sul
+> controller credendo di non farlo.
 
 ---
 

@@ -67,10 +67,10 @@ pipeline {
             defaultValue: '20G',
             description: 'Dimensione max ccache'
         )
-        booleanParam(
+        choice(
             name: 'OPENWISP_UPLOAD',
-            defaultValue: false,
-            description: 'Carica su OpenWISP Firmware Upgrader'
+            choices: ['config', 'on', 'off'],
+            description: 'Carica su OpenWISP Firmware Upgrader: "config" segue openwisp_upload_enabled di ninux.yml, "on"/"off" lo forzano. Era un booleano, ma un booleano non sa dire "no": con openwisp_upload_enabled: true in ninux.yml, deselezionarlo non disattivava niente.'
         )
         booleanParam(
             name: 'OPENWISP_TRIGGER_UPGRADE',
@@ -82,10 +82,10 @@ pipeline {
             defaultValue: '',
             description: 'URL OpenWISP Firmware Upgrader (vuoto = da group_vars)'
         )
-        booleanParam(
+        choice(
             name: 'GITHUB_RELEASE',
-            defaultValue: false,
-            description: 'Crea release GitHub e carica i firmware come assets'
+            choices: ['config', 'on', 'off'],
+            description: 'Crea release GitHub coi firmware come asset: "config" segue github_release_enabled di ninux.yml, "on"/"off" lo forzano. Stesso motivo di OPENWISP_UPLOAD: da booleano non era possibile disattivarlo.'
         )
         string(
             name: 'GITHUB_REPO',
@@ -184,15 +184,18 @@ Workspace : ${WORKSPACE}
                         def enginesJson = "\"${params.CAPTIVE_PORTAL_ENGINE}\""
                         args << "-e '{\"openwrt_cp_engines\": [${enginesJson}], \"openwrt_org_cp_engines\": {}}'"
                     }
+                    // 'config' = non passare nulla, decide ninux.yml.
+                    // Passare esplicitamente false e' l'unico modo per spegnere
+                    // un openwisp_upload_enabled: true che arriva da ninux.yml.
+                    if (params.OPENWISP_UPLOAD != 'config') {
+                        args << "-e openwisp_upload_enabled=${params.OPENWISP_UPLOAD == 'on'}"
+                    }
                     if (params.USE_IMAGEBUILDER) {
                         args << "-e openwrt_use_imagebuilder=true"
                         args << "-e openwrt_ib_force_seed=${params.IB_FORCE_SEED}"
                     }
-                    if (params.OPENWISP_UPLOAD) {
-                        args << "-e openwisp_upload_enabled=true"
-                        if (params.OPENWISP_TRIGGER_UPGRADE) args << "-e openwisp_trigger_upgrade=true"
-                        if (params.OPENWISP_URL)             args << "-e openwisp_url=${params.OPENWISP_URL}"
-                    }
+                    if (params.OPENWISP_TRIGGER_UPGRADE) args << "-e openwisp_trigger_upgrade=true"
+                    if (params.OPENWISP_URL)             args << "-e openwisp_url=${params.OPENWISP_URL}"
                     args << "--vault-password-file ${VAULT_PASS_FILE}"
                     sh args.join(' ')
 
@@ -258,7 +261,8 @@ Workspace : ${WORKSPACE}
         stage('GitHub Release') {
             when {
                 expression {
-                    params.GITHUB_RELEASE || sh(
+                    if (params.GITHUB_RELEASE != 'config') return params.GITHUB_RELEASE == 'on'
+                    return sh(
                         script: "grep -qE '^github_release_enabled:\\s*true' ${WORKSPACE}/ninux.yml && echo yes || echo no",
                         returnStdout: true
                     ).trim() == 'yes'
