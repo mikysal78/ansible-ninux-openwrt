@@ -18,6 +18,9 @@ openwrt_cp_engines:
   - "chilli"
 openwrt_vpn: "NONE"
 
+# Modalita' del ruolo: full | ib-seed | ib-image (vedi tasks/main.yml)
+openwrt_role_mode: "full"
+
 # Alias accettati per le varianti VPN (chiave in minuscolo -> nome canonico).
 # Canonici: NONE, ZeroTier, WireGuard, Dual
 openwrt_vpn_aliases:
@@ -40,6 +43,14 @@ openwrt_src_dir: "{{ openwrt_work_dir }}/build/openwrt"
 openwrt_ccache_enabled: true
 openwrt_ccache_dir: "/var/cache/openwrt-ccache"
 openwrt_ccache_maxsize: "20G"
+
+# ImageBuilder: vedi config/build.yml per la spiegazione completa
+openwrt_use_imagebuilder: false
+openwrt_ib_cache_dir: "{{ openwrt_build_basedir }}/imagebuilder"
+openwrt_ib_force_seed: false
+openwrt_ib_seed_groups:
+  nft: ["none", "uspot"]
+  legacy: ["chilli"]
 
 openwrt_tmpfs_enabled: true
 openwrt_tmpfs_size: "8G"
@@ -93,6 +104,8 @@ openwrt_build_deps:
   - liblzma-dev
   - libpam0g-dev
   - cpio
+  # scompattare il tarball dell'ImageBuilder (.tar.zst)
+  - zstd
 
 openwisp_upload_enabled: false
 openwisp_url: ""

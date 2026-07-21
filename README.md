@@ -616,6 +616,58 @@ quindi il parallelo è efficiente senza moltiplicare RAM/disco.
 | tmpfs per `tmp/` | **-30%** I/O |
 | 4 varianti in parallelo | **-60%** per device |
 
+### ImageBuilder (sperimentale)
+
+Le varianti dello stesso device differiscono solo per **quali** pacchetti sono
+installati, non per come sono compilati. Ricompilare toolchain, kernel e
+pacchetti a ogni variante è lavoro buttato.
+
+Con `openwrt_use_imagebuilder: true` la build diventa a due tempi:
+
+```
+Device 1
+  ├── seed  (1 compilazione completa, superset delle varianti)  ~30-60 min
+  │     └── produce openwrt-imagebuilder-*.tar.zst + repo pacchetti
+  └── per ogni variante: make image dall'ImageBuilder            ~1-3 min
+```
+
+Con la matrice attuale di basilicata (2 VPN × 2 CP = 4 varianti/device) si
+passa da 4 compilazioni complete a 1 + 4 assemblaggi.
+
+Da Jenkins: parametro `USE_IMAGEBUILDER`. Da riga di comando:
+
+```bash
+ansible-playbook playbooks/build_all.yml -e openwrt_use_imagebuilder=true
+```
+
+**Gruppi seed.** chilli e uspot non possono condividere lo stesso seed: chilli
+richiede firewall3 + iptables legacy, uspot firewall4 + nftables, ed è una
+scelta di compilazione, non un pacchetto installabile dopo. Servono quindi due
+seed distinti, definiti in `openwrt_ib_seed_groups` (`config/build.yml`). Le
+varianti senza Captive Portal stanno col gruppo nftables. Un gruppo senza
+varianti nella matrice non viene compilato.
+
+**Cache.** Gli ImageBuilder restano in `build/imagebuilder/<versione>/<org>/
+<device>/<gruppo>/` e sopravvivono alla pulizia post-build: una build
+successiva sullo stesso device parte già dagli assemblaggi. Dopo aver
+modificato `base.config`, un `.config` di device o i feed, il seed va rifatto:
+`openwrt_ib_force_seed: true` (Jenkins: `IB_FORCE_SEED`).
+
+**Composizione delle varianti.** `roles/ninux_build_openwrt/files/ib_packages.py`
+traduce i `.config`/`.ext` del repo nella lista `PACKAGES` per `make image`, così
+la composizione resta definita in un posto solo. Distingue rimozioni esplicite
+(`# CONFIG_PACKAGE_x is not set`, es. `-firewall4` in chilli.ext: deliberate,
+sempre applicate) da quelle implicite (pacchetti di un'estensione non usata in
+questa variante), che vengono filtrate contro i pacchetti di default del target
+per non togliere per sbaglio componenti base.
+
+I nomi dei file prodotti sono identici a quelli del percorso normale: release
+GitHub e upload OpenWISP non cambiano.
+
+> Percorso sperimentale, `false` di default. Se un assemblaggio fallisce, il
+> sospetto numero uno è una rimozione implicita che ha tolto una dipendenza:
+> il log mostra la lista `PACKAGES` completa prima di `make image`.
+
 ### Proxmox LXC e tmpfs
 
 ```bash

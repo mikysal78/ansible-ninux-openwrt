@@ -1,0 +1,75 @@
+---
+# playbooks/_build_device_variants_ib.yml
+# Incluso da build_all.yml quando openwrt_use_imagebuilder: true.
+#
+# Equivalente di _build_device_variants.yml, ma in due tempi:
+#   1. un seed per gruppo di varianti (la sola compilazione pesante)
+#   2. un assemblaggio per variante, dall'ImageBuilder del suo gruppo
+#
+# I gruppi esistono perche' chilli (firewall3/iptables legacy) e uspot
+# (firewall4/nftables) non possono condividere lo stesso albero compilato.
+
+- name: "[ {{ target_item }} ] Gruppi seed richiesti dalla matrice varianti"
+  ansible.builtin.set_fact:
+    _ib_groups_needed: >-
+      {{ _variant_matrix | map(attribute='engine')
+         | map('extract', _ib_engine_group) | unique | list }}
+
+- name: "[ {{ target_item }} ] Fallisci se un motore CP non ha un gruppo seed"
+  ansible.builtin.fail:
+    msg: >-
+      Motori CP senza gruppo in openwrt_ib_seed_groups:
+      {{ _variant_matrix | map(attribute='engine') | reject('in', _ib_engine_group) | unique | list | join(', ') }}.
+      Aggiungili a un gruppo esistente in config/build.yml, oppure creane uno
+      nuovo se hanno un backend firewall incompatibile con quelli attuali.
+  when: _variant_matrix | map(attribute='engine') | reject('in', _ib_engine_group) | list | length > 0
+
+- name: "[ {{ target_item }} ] Piano ImageBuilder"
+  ansible.builtin.debug:
+    msg: >-
+      {{ _ib_groups_needed | length }} seed da compilare
+      ({{ _ib_groups_needed | join(', ') }}) per
+      {{ _variant_matrix | length }} varianti.
+
+- name: "Compila il seed e produci l'ImageBuilder"
+  ansible.builtin.include_role:
+    name: ninux_build_openwrt
+  vars:
+    openwrt_role_mode: "ib-seed"
+    openwrt_target: "{{ target_item }}"
+    openwrt_cleanup_after_build: false
+    _ib_group: "{{ group_item }}"
+    _ib_group_engines: "{{ openwrt_ib_seed_groups[group_item] }}"
+  loop: "{{ _ib_groups_needed }}"
+  loop_control:
+    loop_var: group_item
+    label: "{{ target_item }} seed={{ group_item }}"
+
+- name: "Assembla variante dall'ImageBuilder"
+  ansible.builtin.include_role:
+    name: ninux_build_openwrt
+  vars:
+    openwrt_role_mode: "ib-image"
+    openwrt_target: "{{ target_item }}"
+    openwrt_vpn: "{{ variant_item.vpn }}"
+    openwrt_captive_portal: "{{ variant_item.cp }}"
+    openwrt_cp_engine: "{{ variant_item.engine | default('chilli') }}"
+    openwrt_cleanup_after_build: false
+    _ib_group: "{{ _ib_engine_group[variant_item.engine] }}"
+    _ib_group_engines: "{{ openwrt_ib_seed_groups[_ib_engine_group[variant_item.engine]] }}"
+  loop: "{{ _variant_matrix }}"
+  loop_control:
+    loop_var: variant_item
+    label: "{{ target_item }} VPN={{ variant_item.vpn }} CP={{ variant_item.engine if variant_item.cp else 'NO' }}"
+
+# staging_dir/build_dir sono del solo seed: gli ImageBuilder stanno in
+# openwrt_ib_cache_dir (fuori da build/openwrt) e sopravvivono, cosi' una
+# build successiva sullo stesso device riparte dai soli assemblaggi.
+- name: "[ {{ target_item }} ] Pulizia post-device"
+  ansible.builtin.shell: |
+    rm -rf {{ openwrt_work_dir }}/build/openwrt/staging_dir
+    rm -rf {{ openwrt_work_dir }}/build/openwrt/build_dir
+    rm -rf {{ openwrt_work_dir }}/build/openwrt/bin
+  args:
+    executable: /bin/bash
+  changed_when: true

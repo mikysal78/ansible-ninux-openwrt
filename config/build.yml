@@ -91,6 +91,49 @@ openwrt_ccache_dir: "/var/cache/openwrt-ccache"
 openwrt_ccache_maxsize: "20G"
 
 # -----------------------------------------------------------------------------
+# PERFORMANCE - ImageBuilder
+#
+# Percorso normale: ogni variante (device x VPN x Captive Portal) e' una
+# compilazione completa da sorgente. Le varianti dello stesso device pero'
+# differiscono solo per QUALI pacchetti sono installati, non per come sono
+# compilati: ricompilare toolchain, kernel e pacchetti ogni volta e' lavoro
+# buttato.
+#
+# Percorso ImageBuilder: per ogni device si compila UNA volta un "seed" che e'
+# il superset delle varianti (tutte le VPN + il motore CP del gruppo). Il seed
+# produce un ImageBuilder standalone con dentro tutti i pacchetti compilati
+# (base.config ha gia' CONFIG_IB=y e CONFIG_IB_STANDALONE=y). Le varianti
+# vengono poi assemblate da quell'ImageBuilder in un paio di minuti l'una.
+#
+# Con l'attuale matrice basilicata (2 VPN x 2 CP = 4 varianti/device) si passa
+# da 4 compilazioni complete a 1 + 4 assemblaggi.
+#
+# I nomi dei file prodotti sono identici a quelli del percorso normale:
+# release GitHub e upload OpenWISP non cambiano.
+openwrt_use_imagebuilder: false
+
+# Dove conservare gli ImageBuilder estratti, per versione/org/device/gruppo.
+# Sopravvive tra le build: un device gia' "seedato" riparte dagli assemblaggi.
+openwrt_ib_cache_dir: "{{ openwrt_build_basedir }}/imagebuilder"
+
+# Ricompila il seed anche se in cache (dopo modifiche a base.config o ai feed)
+openwrt_ib_force_seed: false
+
+# Gruppi di varianti che possono condividere lo stesso seed.
+#
+# chilli e uspot NON possono stare nello stesso seed: chilli richiede
+# firewall3 + iptables legacy, uspot firewall4 + nftables, e la scelta e' una
+# opzione di compilazione, non un pacchetto installabile a posteriori. Servono
+# quindi due seed distinti. Le varianti senza Captive Portal ('none') stanno
+# col gruppo nftables, che e' il default OpenWrt.
+#
+# Un gruppo senza varianti nella matrice corrente non viene compilato: con
+# basilicata (motore uspot) si compila il solo gruppo 'nft'.
+openwrt_ib_seed_groups:
+  nft: ["none", "uspot"]
+  legacy: ["chilli"]
+
+# -----------------------------------------------------------------------------
 # PERFORMANCE - tmpfs (RAM disk per directory temporanee build)
 # -----------------------------------------------------------------------------
 
@@ -240,3 +283,5 @@ openwrt_build_deps:
   - liblzma-dev
   - libpam0g-dev
   - cpio
+  # scompattare il tarball dell'ImageBuilder (.tar.zst)
+  - zstd

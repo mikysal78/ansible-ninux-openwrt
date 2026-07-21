@@ -33,6 +33,16 @@ pipeline {
             description: 'Motore Captive Portal: "config" usa ninux.yml (incl. override per org, es. basilicata=uspot); gli altri forzano il motore. Build separate, mai chilli e uspot insieme (ALL = una build per motore)'
         )
         booleanParam(
+            name: 'USE_IMAGEBUILDER',
+            defaultValue: false,
+            description: 'Compila UN seed per device e assembla le varianti con l\'ImageBuilder invece di ricompilare ogni variante da sorgente. Molto piu\' veloce quando le varianti per device sono piu\' di una.'
+        )
+        booleanParam(
+            name: 'IB_FORCE_SEED',
+            defaultValue: false,
+            description: 'Ricompila il seed anche se un ImageBuilder e\' gia\' in cache (serve dopo modifiche a base.config, ai .config dei device o ai feed). Ignorato se USE_IMAGEBUILDER e\' false.'
+        )
+        booleanParam(
             name: 'SKIP_DEPS',
             defaultValue: false,
             description: 'Salta apt install (se gia fatto)'
@@ -175,6 +185,10 @@ Workspace : ${WORKSPACE}
                         def engines = params.CAPTIVE_PORTAL_ENGINE == 'ALL' ? ['chilli', 'uspot'] : [params.CAPTIVE_PORTAL_ENGINE]
                         def enginesJson = engines.collect { "\"${it}\"" }.join(', ')
                         args << "-e '{\"openwrt_cp_engines\": [${enginesJson}], \"openwrt_org_cp_engines\": {}}'"
+                    }
+                    if (params.USE_IMAGEBUILDER) {
+                        args << "-e openwrt_use_imagebuilder=true"
+                        args << "-e openwrt_ib_force_seed=${params.IB_FORCE_SEED}"
                     }
                     if (params.OPENWISP_UPLOAD) {
                         args << "-e openwisp_upload_enabled=true"
