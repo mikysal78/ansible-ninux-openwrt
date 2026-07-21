@@ -99,7 +99,7 @@ openwisp_orgs:
 
   basilicata:
     controller_url: "https://openwisp.ninux-nnxx.it"
-    management_interface: "zt3az7skkd"
+    management_interface: "owzt07dbf0"
     shared_secret: !vault |
           $ANSIBLE_VAULT;1.1;AES256
           30313965623566373964646561653230346437333635656163333461383235653233346664633034
@@ -145,7 +145,7 @@ openwisp_org_slug: "default"
 # Recuperabile da: Admin OpenWISP → Organizations → <org> → URL
 # ansible-vault encrypt_string --vault-password-file /var/lib/jenkins/.vault_pass \
 #   'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' --name 'openwisp_org_id'
-openwisp_org_id: ""
+openwisp_org_id: "3a6e98ba-c021-41eb-be44-65a8130e6aec"
 
 # Nome della category firmware in OpenWISP
 openwisp_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"
