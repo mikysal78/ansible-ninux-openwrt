@@ -2,13 +2,13 @@
 # tasks/ib_dotconfig.yml - .config del SEED per l'ImageBuilder
 #
 # Differenza rispetto a dotconfig.yml: quello compone il .config di UNA
-# variante, questo compone il SUPERSET di un gruppo di varianti. Il seed viene
-# compilato una volta sola e serve solo a produrre l'ImageBuilder e il suo
+# variante, questo compone il SUPERSET di tutte le varianti del device. Il seed
+# viene compilato una volta sola e serve solo a produrre l'ImageBuilder e il suo
 # repository di pacchetti: l'immagine che ne esce viene scartata.
 #
-# Vengono appese tutte le estensioni VPN (la VPN varia dentro il gruppo) e
-# l'estensione CP del gruppo. Non si mescolano chilli e uspot: sono in gruppi
-# distinti proprio perche' hanno backend firewall incompatibili.
+# Vengono appese tutte le estensioni: le VPN e i motori Captive Portal
+# configurati. Presuppone che i motori in openwrt_cp_engines siano compilabili
+# insieme (vero con uspot, unico rimasto).
 
 - name: "[IB seed] Rimuovi .config esistenti"
   ansible.builtin.shell: rm -rf {{ openwrt_src_dir }}/.config*
@@ -39,10 +39,10 @@
     remote_src: true
     mode: "0644"
 
-- name: "[IB seed] Appendi estensione CP del gruppo + tutte le VPN"
+- name: "[IB seed] Appendi tutte le estensioni CP e VPN"
   ansible.builtin.shell: >
     cat {{ openwrt_ninux_src_dir }}/{{ item }}.ext >> {{ openwrt_src_dir }}/.config
-  loop: "{{ (_ib_group_engines | reject('equalto', 'none') | list) + ['zerotier', 'wireguard'] }}"
+  loop: "{{ _ib_cp_engines + ['zerotier', 'wireguard'] }}"
   changed_when: true
 
 - name: "[IB seed] Appendi config base comune"

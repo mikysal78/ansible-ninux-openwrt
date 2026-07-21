@@ -28,8 +28,9 @@ toglierebbero anche quelli, producendo un'immagine senza firewall. Le rimozioni
 implicite vengono quindi filtrate contro i pacchetti di default del target.
 
 Le rimozioni esplicite invece sopravvivono al filtro: sono una scelta
-deliberata di chi ha scritto il .ext. E' il caso di chilli.ext, che disattiva
-apposta firewall4 (default) perche' coova-chilli richiede iptables legacy.
+deliberata di chi ha scritto il .ext, e valgono anche contro un default (era
+il caso di chilli.ext, che disattivava apposta firewall4 perche' coova-chilli
+richiedeva iptables legacy).
 
 --add vince su tutto: un pacchetto richiesto dalla variante resta installato.
 """

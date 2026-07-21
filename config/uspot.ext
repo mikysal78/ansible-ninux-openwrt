@@ -1,12 +1,9 @@
-# Estensione Captive Portal (uspot) — ALTERNATIVA a chilli.ext
-#
-# Build SEPARATA da coova-chilli: i due non possono convivere sullo stesso
-# router. chilli.ext forza firewall+iptables legacy, uspot richiede
-# firewall4/nftables (default OpenWrt) e ucode.
+# Estensione Captive Portal (uspot)
 #
 # Pacchetti dal feed 'packages' upstream (net/uspot), nessun feed extra.
+# Richiede firewall4/nftables (default OpenWrt) e ucode.
 # La configurazione (/etc/config/uspot) NON sta nel firmware: la spinge OpenWISP
-# come template, come gia' avviene per chilli.
+# come template.
 
 CONFIG_PACKAGE_uspot=y
 CONFIG_PACKAGE_uspot-www=y
@@ -16,7 +13,7 @@ CONFIG_PACKAGE_uspotfilter=y
 CONFIG_PACKAGE_uhttpd=y
 CONFIG_PACKAGE_uhttpd-mod-ucode=y
 
-# Firewall nftables (esplicito: uspot NON funziona con iptables legacy)
+# Firewall nftables (uspot NON funziona con iptables legacy)
 CONFIG_PACKAGE_firewall4=y
 CONFIG_PACKAGE_nftables-json=y
 CONFIG_PACKAGE_kmod-nft-core=y

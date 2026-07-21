@@ -31,13 +31,13 @@ t_keep_versions: 3
 
 # Le tre varianti simulate. Le due dimensioni sono indipendenti:
 #   VPN = NONE | ZeroTier | WireGuard | Dual   (Dual = ZeroTier E WireGuard)
-#   CP  = nessuno | chilli | uspot             (mai chilli e uspot insieme!)
+#   CP  = nessuno | uspot                      (uspot e' l'unico motore)
 # Coprono: niente VPN e niente portale; il caso reale di basilicata (uspot +
-# WireGuard con VXLAN); e VPN doppia con chilli.
+# WireGuard con VXLAN); e VPN doppia col portale.
 t_variants:
   - vpn: "NONE"
     cp: false
-    engine: "chilli"
+    engine: "uspot"
     key: "VPN-NONE_CP-nessuno"
     flavor: "Standard"
     build_version: "v25.12.5-glinet_gl-mt-VPN-NO"
@@ -49,9 +49,9 @@ t_variants:
     build_version: "v25.12.5-glinet_gl-mt-US-VPN-WG"
   - vpn: "Dual"
     cp: true
-    engine: "chilli"
-    key: "VPN-Dual_CP-chilli"
-    flavor: "CaptivePortal"
+    engine: "uspot"
+    key: "VPN-Dual_CP-uspot"
+    flavor: "CaptivePortal-uspot"
     build_version: "v25.12.5-glinet_gl-mt-CP-VPN-DV"
 
 # Variante con il controller OpenWISP irraggiungibile (porta chiusa), come nel
@@ -61,7 +61,7 @@ t_variants:
 t_offline_variant:
   vpn: "NONE"
   cp: false
-  engine: "chilli"
+  engine: "uspot"
   key: "offline"
   flavor: "Standard"
   openwisp_url: "http://127.0.0.1:9"

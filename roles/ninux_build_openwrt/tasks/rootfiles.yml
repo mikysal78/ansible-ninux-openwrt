@@ -82,11 +82,13 @@
     - 99-mesh
     - 99-br-cp
 
-- name: Rimuovi /etc/config/chilli (CP disabilitato o motore diverso da chilli)
+# coova-chilli non e' piu' supportato: la staging root_files sopravvive tra le
+# build, quindi un /etc/config/chilli lasciato li' da una build precedente
+# finirebbe ancora dentro il firmware.
+- name: Rimuovi /etc/config/chilli residuo (coova-chilli rimosso)
   ansible.builtin.file:
     path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/config/chilli"
     state: absent
-  when: not (openwrt_captive_portal | bool and openwrt_cp_engine == 'chilli')
 
 - name: Rimuovi /etc/config/zerotier (VPN senza ZeroTier)
   ansible.builtin.file:
@@ -95,8 +97,8 @@
   when: _vpn not in ['ZeroTier', 'Dual']
 
 # La configurazione del portale la spinge OpenWISP come template: nel firmware
-# c'e' solo /etc/config/uspot vuoto (come /etc/config/chilli), che il template
-# OpenWISP sovrascrive al primo checkin. Nessun uci-default 99-uspot.
+# c'e' solo /etc/config/uspot vuoto, che il template OpenWISP sovrascrive al
+# primo checkin. Nessun uci-default 99-uspot.
 - name: Rimuovi 99-uspot residuo (la config uspot arriva da OpenWISP)
   ansible.builtin.file:
     path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-uspot"

@@ -29,8 +29,8 @@ pipeline {
         )
         choice(
             name: 'CAPTIVE_PORTAL_ENGINE',
-            choices: ['config', 'chilli', 'uspot', 'ALL'],
-            description: 'Motore Captive Portal: "config" usa ninux.yml (incl. override per org, es. basilicata=uspot); gli altri forzano il motore. Build separate, mai chilli e uspot insieme (ALL = una build per motore)'
+            choices: ['config', 'uspot'],
+            description: 'Motore Captive Portal: "config" usa ninux.yml (incl. eventuali override per org); "uspot" lo forza. Oggi uspot e\' l\'unico motore (coova-chilli rimosso).'
         )
         booleanParam(
             name: 'USE_IMAGEBUILDER',
@@ -117,10 +117,9 @@ pipeline {
                     if (!configs) error "Nessun .config in ${configDir}"
                     def nDev  = params.DEVICES?.trim() ? params.DEVICES.trim().split(',').size() : configs.split('\n').size()
                     def nVpn  = params.VPN_VARIANTS == 'ALL' ? 4 : 1
-                    // "config": i motori li decide ninux.yml (di solito 1 per org),
-                    // il totale esatto lo stampa il playbook nel suo Piano di build
-                    def nEng  = params.CAPTIVE_PORTAL_ENGINE == 'ALL' ? 2 : 1
-                    def nCp   = params.CAPTIVE_PORTAL_VARIANTS ? 1 + nEng : 1
+                    // Un solo motore CP (uspot); il totale esatto lo stampa
+                    // comunque il playbook nel suo Piano di build
+                    def nCp   = params.CAPTIVE_PORTAL_VARIANTS ? 2 : 1
                     def total = nDev * nVpn * nCp
                     def engineLabel = params.CAPTIVE_PORTAL_VARIANTS
                         ? (params.CAPTIVE_PORTAL_ENGINE == 'config' ? 'da ninux.yml (override per org)' : params.CAPTIVE_PORTAL_ENGINE)
@@ -182,8 +181,7 @@ Workspace : ${WORKSPACE}
                     // per org): non passare nulla, cosi' basilicata compila uspot.
                     // Un motore esplicito forza la scelta e azzera l'override org.
                     if (params.CAPTIVE_PORTAL_VARIANTS && params.CAPTIVE_PORTAL_ENGINE != 'config') {
-                        def engines = params.CAPTIVE_PORTAL_ENGINE == 'ALL' ? ['chilli', 'uspot'] : [params.CAPTIVE_PORTAL_ENGINE]
-                        def enginesJson = engines.collect { "\"${it}\"" }.join(', ')
+                        def enginesJson = "\"${params.CAPTIVE_PORTAL_ENGINE}\""
                         args << "-e '{\"openwrt_cp_engines\": [${enginesJson}], \"openwrt_org_cp_engines\": {}}'"
                     }
                     if (params.USE_IMAGEBUILDER) {

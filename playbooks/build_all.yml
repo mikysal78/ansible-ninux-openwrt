@@ -101,19 +101,6 @@
       loop_control:
         label: "VPN={{ item.0 }} CP={{ item.1 }}"
 
-    # Mappa motore CP -> gruppo seed, invertendo openwrt_ib_seed_groups.
-    # Serve sia a scegliere quali seed compilare sia, per ogni variante, a
-    # sapere da quale ImageBuilder assemblarla.
-    - name: Inverti i gruppi seed in mappa motore -> gruppo
-      ansible.builtin.set_fact:
-        _ib_engine_group: >-
-          {{ _ib_engine_group | default({})
-             | combine(dict(item.value | product([item.key]))) }}
-      loop: "{{ openwrt_ib_seed_groups | dict2items }}"
-      loop_control:
-        label: "{{ item.key }}: {{ item.value | join(', ') }}"
-      when: openwrt_use_imagebuilder | bool
-
     - name: Piano di build
       ansible.builtin.debug:
         msg: |
@@ -123,7 +110,7 @@
           Device         : {{ _discovered_targets | join(', ') }}
           Varianti/device: {{ _variant_matrix | length }}
           Totale firmware: {{ _discovered_targets | length * _variant_matrix | length }}
-          Strategia      : {{ 'ImageBuilder — 1 seed per gruppo, poi assemblaggio delle varianti'
+          Strategia      : {{ 'ImageBuilder — 1 seed per device, poi assemblaggio delle varianti'
                               if openwrt_use_imagebuilder | bool
                               else '1 device per volta, ' ~ _variant_matrix | length ~ ' varianti in parallelo' }}
           Jobs make      : {{ ansible_processor_nproc | int + openwrt_make_jobs_extra | default(2) | int }}

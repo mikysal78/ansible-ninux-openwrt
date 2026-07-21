@@ -10,7 +10,7 @@
 - name: "[IB image] Calcola percorsi"
   ansible.builtin.set_fact:
     _ib_cache_dir: >-
-      {{ openwrt_ib_cache_dir }}/{{ openwrt_version }}/{{ openwrt_org }}/{{ openwrt_target }}/{{ _ib_group }}
+      {{ openwrt_ib_cache_dir }}/{{ openwrt_version }}/{{ openwrt_org }}/{{ openwrt_target }}
     _ib_bin_dir: "{{ openwrt_src_dir }}/bin/targets/ib/{{ openwrt_target }}"
     # Azzerati a ogni variante: set_fact persiste sull'host e senza reset le
     # liste si accumulerebbero da una variante all'altra.
@@ -25,14 +25,14 @@
 - name: "[IB image] Fallisci se manca l'ImageBuilder"
   ansible.builtin.fail:
     msg: >
-      ImageBuilder assente in {{ _ib_cache_dir }}/imagebuilder.
-      Il seed del gruppo '{{ _ib_group }}' per {{ openwrt_target }} non e' stato compilato.
+      ImageBuilder assente in {{ _ib_cache_dir }}/imagebuilder:
+      il seed di {{ openwrt_target }} non e' stato compilato.
   when: not _ib_present.stat.exists
 
 # -----------------------------------------------------------------------------
 # Composizione della variante
 #
-# Il seed e' un superset: contiene tutte le VPN e il motore CP del gruppo.
+# Il seed e' un superset: contiene tutte le VPN e tutti i motori CP.
 # Le estensioni NON volute qui vanno negate esplicitamente, altrimenti i loro
 # pacchetti resterebbero installati.
 # -----------------------------------------------------------------------------
@@ -45,8 +45,7 @@
         + (['zerotier'] if _vpn in ['ZeroTier', 'Dual'] else [])
         + (['wireguard'] if _vpn in ['WireGuard', 'Dual'] else [])
       }}
-    _ib_ext_seed: >-
-      {{ (_ib_group_engines | reject('equalto', 'none') | list) + ['zerotier', 'wireguard'] }}
+    _ib_ext_seed: "{{ _ib_cp_engines + ['zerotier', 'wireguard'] }}"
 
 - name: "[IB image] Estensioni da negare (presenti nel seed, non in questa variante)"
   ansible.builtin.set_fact:
@@ -120,7 +119,6 @@
       - "Profilo  : {{ _ib_profile_raw.stdout | trim }}"
       - "VPN      : {{ _vpn }}"
       - "CP       : {{ openwrt_cp_engine if openwrt_captive_portal | bool else 'NO' }}"
-      - "Seed     : {{ _ib_group }}"
       - "Rimossi  : {{ _ib_ext_del | join(', ') | default('nessuno', true) }}"
       - "PACKAGES : {{ _ib_packages.stdout | trim }}"
 

@@ -9,7 +9,7 @@
     openwrt_target: "{{ target_item }}"
     openwrt_vpn: "{{ variant_item.vpn }}"
     openwrt_captive_portal: "{{ variant_item.cp }}"
-    openwrt_cp_engine: "{{ variant_item.engine | default('chilli') }}"
+    openwrt_cp_engine: "{{ variant_item.engine | default('uspot') }}"
     openwrt_cleanup_after_build: false
   loop: "{{ _variant_matrix }}"
   loop_control:

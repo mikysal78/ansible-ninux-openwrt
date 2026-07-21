@@ -37,6 +37,16 @@
       Valori ammessi: full, ib-seed, ib-image.
   tags: [always]
 
+# Motori Captive Portal dell'org: il seed li compila tutti insieme, e ogni
+# variante nega quelli che non usa. Stessa risoluzione fatta da build_all.yml
+# per la matrice, ripetuta qui per non dipendere dal playbook chiamante.
+- name: Risolvi i motori Captive Portal dell'org
+  ansible.builtin.set_fact:
+    _ib_cp_engines: >-
+      {{ (openwrt_org_cp_engines | default({}))[openwrt_org] | default(openwrt_cp_engines) }}
+  when: openwrt_role_mode in ['ib-seed', 'ib-image']
+  tags: [always]
+
 - name: Install build dependencies
   ansible.builtin.include_tasks: deps.yml
   tags: [deps]

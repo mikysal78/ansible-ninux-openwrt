@@ -3,14 +3,14 @@
 #
 # Questa e' l'unica compilazione pesante del percorso ImageBuilder: da qui in
 # poi le varianti vengono assemblate da ib_image.yml in un paio di minuti
-# l'una. Il seed e' un superset (tutte le VPN + il motore CP del gruppo):
-# l'immagine che produce non viene usata, servono solo l'ImageBuilder e il
-# repository di pacchetti che porta con se' (CONFIG_IB_STANDALONE).
+# l'una. Il seed e' un superset (tutte le VPN, tutti i motori CP): l'immagine
+# che produce non viene usata, servono solo l'ImageBuilder e il repository di
+# pacchetti che porta con se' (CONFIG_IB_STANDALONE).
 
 - name: "[IB seed] Calcola percorsi cache"
   ansible.builtin.set_fact:
     _ib_cache_dir: >-
-      {{ openwrt_ib_cache_dir }}/{{ openwrt_version }}/{{ openwrt_org }}/{{ openwrt_target }}/{{ _ib_group }}
+      {{ openwrt_ib_cache_dir }}/{{ openwrt_version }}/{{ openwrt_org }}/{{ openwrt_target }}
 
 - name: "[IB seed] Verifica se un ImageBuilder valido e' gia' in cache"
   ansible.builtin.stat:
@@ -20,7 +20,7 @@
 - name: "[IB seed] Riusa l'ImageBuilder in cache"
   ansible.builtin.debug:
     msg: >-
-      ImageBuilder gia' presente per {{ openwrt_target }} gruppo '{{ _ib_group }}':
+      ImageBuilder gia' presente per {{ openwrt_target }}:
       {{ _ib_cache_dir }}/imagebuilder — compilazione del seed saltata.
       Per riforzarla: -e openwrt_ib_force_seed=true
   when: _ib_cached.stat.exists and not (openwrt_ib_force_seed | default(false) | bool)
@@ -58,8 +58,7 @@
       ansible.builtin.debug:
         msg:
           - "Target  : {{ openwrt_target }}"
-          - "Gruppo  : {{ _ib_group }} (motori CP: {{ _ib_group_engines | join(', ') }})"
-          - "VPN     : superset (ZeroTier + WireGuard)"
+          - "Seed    : superset — VPN ZeroTier + WireGuard, CP {{ _ib_cp_engines | join(', ') }}"
           - "Jobs    : {{ _make_jobs }}"
           - "Cache   : {{ _ib_cache_dir }}"
 

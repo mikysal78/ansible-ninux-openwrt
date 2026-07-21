@@ -33,7 +33,6 @@ API = "/api/v1/firmware-upgrader"
 # sarebbe finito nell'immagine caricata.
 MARKERS = {
     "uspot": "CONFIG_PACKAGE_uspot=y",
-    "chilli": "CONFIG_PACKAGE_coova-chilli=y",
     "zerotier": "CONFIG_PACKAGE_zerotier=y",
     "wireguard": "CONFIG_PACKAGE_wireguard-tools=y",
     "vxlan": "CONFIG_PACKAGE_kmod-vxlan=y",
