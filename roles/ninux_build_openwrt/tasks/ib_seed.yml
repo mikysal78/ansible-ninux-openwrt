@@ -153,17 +153,6 @@
           -C {{ _ib_cache_dir }}/imagebuilder --strip-components=1
       changed_when: true
 
-    # L'ImageBuilder standalone non porta il file `repositories`: apk lo cerca
-    # (--repositories-file) e a ogni invocazione stampa "failed to read
-    # repositories". I pacchetti li prende comunque dal repo locale
-    # (--repository packages/packages.adb), ma il rumore nasconde gli errori
-    # veri: basta un file vuoto.
-    - name: "[IB seed] Crea il file repositories vuoto per apk"
-      ansible.builtin.copy:
-        content: ""
-        dest: "{{ _ib_cache_dir }}/imagebuilder/repositories"
-        mode: "0644"
-
     # Il .config post-defconfig e' l'elenco autorevole di cosa e' stato davvero
     # compilato: ib_packages.py lo usa per non passare a `make image` pacchetti
     # inesistenti (simboli scartati da defconfig, opzioni interne, rinomine).
@@ -180,6 +169,19 @@
         state: "{{ item }}"
         mode: "0755"
       loop: [absent, directory]
+
+# L'ImageBuilder standalone non porta il file `repositories`: apk lo cerca
+# (--repositories-file) e a ogni invocazione stampa "failed to read
+# repositories". I pacchetti li prende comunque dal repo locale
+# (--repository packages/packages.adb), ma il rumore nasconde gli errori veri:
+# basta un file vuoto. Fuori dal block: serve anche agli ImageBuilder gia' in
+# cache, estratti prima che questo esistesse.
+- name: "[IB seed] Crea il file repositories vuoto per apk"
+  ansible.builtin.copy:
+    content: ""
+    dest: "{{ _ib_cache_dir }}/imagebuilder/repositories"
+    force: false
+    mode: "0644"
 
 - name: "[IB seed] Verifica il profilo richiesto nell'ImageBuilder"
   ansible.builtin.shell: |
