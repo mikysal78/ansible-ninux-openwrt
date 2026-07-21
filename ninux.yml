@@ -139,7 +139,7 @@ openwisp_url: "https://openwisp.ninux-nnxx.it"
 
 # Slug dell'organizzazione OpenWISP (nome breve, es. "default")
 # NON necessariamente uguale a openwrt_org
-openwisp_org_slug: "default"
+openwisp_org_slug: "basilicata"
 
 # UUID dell'organizzazione OpenWISP (cifrato con encrypt_string)
 # Recuperabile da: Admin OpenWISP → Organizations → <org> → URL
