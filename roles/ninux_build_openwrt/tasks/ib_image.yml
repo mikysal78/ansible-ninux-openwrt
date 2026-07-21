@@ -99,8 +99,8 @@
       {{
         [
           'python3', openwrt_build_basedir ~ '/ib_packages.py',
-          '--valid', _ib_cache_dir ~ '/seed.config',
-          '--keep-info', _ib_cache_dir ~ '/info.txt',
+          '--seed', _ib_cache_dir ~ '/seed.config',
+          '--info', _ib_cache_dir ~ '/info.txt',
           '--profile', _ib_profile_raw.stdout | trim,
           '--add',
           openwrt_ninux_src_dir ~ '/base.config',
@@ -122,14 +122,16 @@
       - "Rimossi  : {{ _ib_ext_del | join(', ') | default('nessuno', true) }}"
       - "PACKAGES : {{ _ib_packages.stdout | trim }}"
 
-# make clean nell'ImageBuilder svuota build_dir e BIN_DIR, non il repository
-# dei pacchetti: costa secondi e garantisce che il rootfs non erediti nulla
-# dalla variante precedente.
-- name: "[IB image] Pulisci lo stato della variante precedente"
-  ansible.builtin.command:
-    cmd: make clean BIN_DIR={{ _ib_bin_dir }}
-    chdir: "{{ _ib_cache_dir }}/imagebuilder"
-  changed_when: true
+# Il rootfs lo azzera gia' l'ImageBuilder (_call_image fa rm -rf TARGET_DIR),
+# ma BIN_DIR no: senza questo le immagini della variante precedente restano li'
+# e verrebbero raccolte come se fossero di questa.
+#
+# NB: non usare `make clean`, che cancella anche tmp/ e dl/ dell'ImageBuilder
+# (vedi target clean nel suo Makefile) lasciandolo a lamentarsi di TMPDIR.
+- name: "[IB image] Rimuovi le immagini della variante precedente"
+  ansible.builtin.file:
+    path: "{{ _ib_bin_dir }}"
+    state: absent
 
 - name: "[IB image] Assembla l'immagine"
   ansible.builtin.command:
