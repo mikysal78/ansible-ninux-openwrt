@@ -46,14 +46,20 @@ openwrt_vpn_variants:
 # Override varianti VPN per organizzazione — vince sulla lista globale.
 # Le org non elencate qui usano openwrt_vpn_variants.
 #
-# basilicata compila solo la variante senza VPN: l'overlay di gestione lo
-# fornisce ZeroTier configurato da OpenWISP, non serve WireGuard nel firmware.
-# Le estensioni restano nel repo (config/wireguard.ext, config/zerotier.ext) e
-# la lista globale sopra le elenca: per riattivarne una qui basta aggiungerla.
-# NB: la variante WireGuard include anche VXLAN (vedi config/wireguard.ext).
+# basilicata compila SOLO ZeroTier. La variante NONE non e' utilizzabile: la
+# VPN non e' un accessorio ma il trasporto della gestione stessa. Il pacchetto
+# zerotier entra nel firmware solo con questa variante (config/zerotier.ext), e
+# solo con questa viene scritto l'uci-default 99-zerotier che crea
+# l'interfaccia di management owzt07dbf0. Senza, OpenWISP puo' spingere il suo
+# template ZeroTier quanto vuole: non c'e' niente da configurare e il device
+# non diventa mai raggiungibile.
+#
+# WireGuard e' stato tolto (la mesh non lo usa piu'), ma config/wireguard.ext
+# resta nel repo e la lista globale sopra lo elenca: riattivarlo per un'org e'
+# una riga qui. NB: include anche VXLAN.
 openwrt_org_vpn_variants:
   basilicata:
-    - "NONE"
+    - "ZeroTier"
 
 # Compila anche le varianti con Captive Portal (una build in più per motore CP)
 openwrt_cp_variants: true
