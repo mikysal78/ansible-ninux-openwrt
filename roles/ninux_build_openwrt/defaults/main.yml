@@ -44,10 +44,12 @@ openwrt_ccache_enabled: true
 openwrt_ccache_dir: "/var/cache/openwrt-ccache"
 openwrt_ccache_maxsize: "20G"
 
-# ImageBuilder: vedi config/build.yml per la spiegazione completa
-openwrt_use_imagebuilder: false
+# ImageBuilder: vedi config/build.yml per la spiegazione completa.
+# force_seed attivo: la chiave di cache non tiene conto del contenuto della
+# configurazione, quindi riusare un seed vecchio darebbe firmware sbagliati.
+openwrt_use_imagebuilder: true
 openwrt_ib_cache_dir: "{{ openwrt_build_basedir }}/imagebuilder"
-openwrt_ib_force_seed: false
+openwrt_ib_force_seed: true
 
 openwrt_tmpfs_enabled: true
 openwrt_tmpfs_size: "8G"

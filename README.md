@@ -608,7 +608,7 @@ Le varianti dello stesso device differiscono solo per **quali** pacchetti sono
 installati, non per come sono compilati. Ricompilare toolchain, kernel e
 pacchetti a ogni variante è lavoro buttato.
 
-Con `openwrt_use_imagebuilder: true` la build diventa a due tempi:
+Attivo di default (`openwrt_use_imagebuilder: true`), la build è a due tempi:
 
 ```
 Device 1
@@ -632,11 +632,22 @@ imponesse scelte di compilazione incompatibili (com'era coova-chilli, che
 richiedeva firewall3 + iptables legacy contro firewall4 + nftables)
 richiederebbe di nuovo un seed separato per motore.
 
-**Cache.** Gli ImageBuilder restano in `build/imagebuilder/<versione>/<org>/
-<device>/` e sopravvivono alla pulizia post-build: una build
-successiva sullo stesso device parte già dagli assemblaggi. Dopo aver
-modificato `base.config`, un `.config` di device o i feed, il seed va rifatto:
-`openwrt_ib_force_seed: true` (Jenkins: `IB_FORCE_SEED`).
+**Cache e `openwrt_ib_force_seed`.** Gli ImageBuilder restano in
+`build/imagebuilder/<versione>/<org>/<device>/` e sopravvivono alla pulizia
+post-build, ma **`openwrt_ib_force_seed` è `true` di default**, quindi il seed
+viene comunque ricompilato.
+
+Il motivo: la chiave di cache è `versione/org/device` e non tiene conto del
+*contenuto* della configurazione. Modificando `base.config`, un `.config` di
+device o i feed, una build con la cache attiva riuserebbe un ImageBuilder
+costruito con la configurazione vecchia e produrrebbe firmware con i pacchetti
+sbagliati, senza alcun errore. Dato che si compila di rado e quasi sempre per
+una nuova versione OpenWrt — caso in cui la cache è comunque da rifare — il
+default sicuro vince sul default veloce.
+
+Mettendolo a `false` (Jenkins: `IB_FORCE_SEED` deselezionato) si passa da ore a
+minuti, ma va fatto solo sapendo che nulla di ciò che finisce nel seed è
+cambiato dall'ultima compilazione.
 
 **Composizione delle varianti.** `roles/ninux_build_openwrt/files/ib_packages.py`
 traduce i `.config`/`.ext` del repo nella lista `PACKAGES` per `make image`, così

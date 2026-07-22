@@ -34,13 +34,13 @@ pipeline {
         )
         booleanParam(
             name: 'USE_IMAGEBUILDER',
-            defaultValue: false,
-            description: 'Compila UN seed per device e assembla le varianti con l\'ImageBuilder invece di ricompilare ogni variante da sorgente. Molto piu\' veloce quando le varianti per device sono piu\' di una.'
+            defaultValue: true,
+            description: 'Compila UN seed per device e assembla le varianti con l\'ImageBuilder invece di ricompilare ogni variante da sorgente: 6 compilazioni complete invece di 12. Deselezionare per tornare al percorso storico.'
         )
         booleanParam(
             name: 'IB_FORCE_SEED',
-            defaultValue: false,
-            description: 'Ricompila il seed anche se un ImageBuilder e\' gia\' in cache (serve dopo modifiche a base.config, ai .config dei device o ai feed). Ignorato se USE_IMAGEBUILDER e\' false.'
+            defaultValue: true,
+            description: 'Ricompila il seed anche se un ImageBuilder e\' gia\' in cache. Attivo di default: si compila di rado e quasi sempre per una nuova versione OpenWrt, quindi la cache sarebbe comunque da buttare. Deselezionarlo fa risparmiare ore, ma solo se si e\' certi che la configurazione non sia cambiata.'
         )
         booleanParam(
             name: 'SKIP_DEPS',
@@ -190,10 +190,10 @@ Workspace : ${WORKSPACE}
                     if (params.OPENWISP_UPLOAD != 'config') {
                         args << "-e openwisp_upload_enabled=${params.OPENWISP_UPLOAD == 'on'}"
                     }
-                    if (params.USE_IMAGEBUILDER) {
-                        args << "-e openwrt_use_imagebuilder=true"
-                        args << "-e openwrt_ib_force_seed=${params.IB_FORCE_SEED}"
-                    }
+                    // Sempre espliciti: con openwrt_use_imagebuilder: true in
+                    // config/build.yml, un "if (params.X)" non saprebbe spegnerlo.
+                    args << "-e openwrt_use_imagebuilder=${params.USE_IMAGEBUILDER}"
+                    args << "-e openwrt_ib_force_seed=${params.IB_FORCE_SEED}"
                     // Sempre esplicito: aggiorna i router in campo, non deve
                     // poter partire da una configurazione dimenticata a true.
                     args << "-e openwisp_trigger_upgrade=${params.OPENWISP_TRIGGER_UPGRADE}"

@@ -111,14 +111,24 @@ openwrt_ccache_maxsize: "20G"
 #
 # I nomi dei file prodotti sono identici a quelli del percorso normale:
 # release GitHub e upload OpenWISP non cambiano.
-openwrt_use_imagebuilder: false
+openwrt_use_imagebuilder: true
 
 # Dove conservare gli ImageBuilder estratti, per versione/org/device/gruppo.
 # Sopravvive tra le build: un device gia' "seedato" riparte dagli assemblaggi.
 openwrt_ib_cache_dir: "{{ openwrt_build_basedir }}/imagebuilder"
 
-# Ricompila il seed anche se in cache (dopo modifiche a base.config o ai feed)
-openwrt_ib_force_seed: false
+# Ricompila il seed anche se in cache.
+#
+# Attivo di default. La chiave di cache e' versione/org/device e NON tiene conto
+# del contenuto della configurazione: un base.config modificato riuserebbe un
+# ImageBuilder costruito con quella vecchia, producendo firmware con i pacchetti
+# sbagliati e senza segnalare niente. Si compila di rado e quasi sempre per una
+# nuova versione OpenWrt, quindi la cache sarebbe comunque da rifare: meglio
+# pagare le ore ed essere certi che il firmware corrisponda alla configurazione.
+#
+# Metterlo a false fa risparmiare ore, ma solo sapendo che nulla di cio' che
+# finisce nel seed e' cambiato dall'ultima compilazione.
+openwrt_ib_force_seed: true
 
 # NB: un solo seed per device presuppone che tutti i motori in
 # openwrt_cp_engines siano compilabili insieme. Vale con uspot, unico motore
