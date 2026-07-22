@@ -75,7 +75,7 @@ pipeline {
         booleanParam(
             name: 'OPENWISP_TRIGGER_UPGRADE',
             defaultValue: false,
-            description: 'Avvia batch upgrade su OpenWISP dopo upload'
+            description: 'Avvia batch upgrade su OpenWISP dopo upload: i router registrati si aggiornano DA SOLI al firmware appena caricato. Lasciare deselezionato e lanciare l\'upgrade a mano dal controller quando si e\' pronti.'
         )
         string(
             name: 'OPENWISP_URL',
@@ -194,7 +194,9 @@ Workspace : ${WORKSPACE}
                         args << "-e openwrt_use_imagebuilder=true"
                         args << "-e openwrt_ib_force_seed=${params.IB_FORCE_SEED}"
                     }
-                    if (params.OPENWISP_TRIGGER_UPGRADE) args << "-e openwisp_trigger_upgrade=true"
+                    // Sempre esplicito: aggiorna i router in campo, non deve
+                    // poter partire da una configurazione dimenticata a true.
+                    args << "-e openwisp_trigger_upgrade=${params.OPENWISP_TRIGGER_UPGRADE}"
                     if (params.OPENWISP_URL)             args << "-e openwisp_url=${params.OPENWISP_URL}"
                     args << "--vault-password-file ${VAULT_PASS_FILE}"
                     sh args.join(' ')

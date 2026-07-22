@@ -45,11 +45,15 @@ openwrt_vpn_variants:
 
 # Override varianti VPN per organizzazione — vince sulla lista globale.
 # Le org non elencate qui usano openwrt_vpn_variants.
+#
+# basilicata compila solo la variante senza VPN: l'overlay di gestione lo
+# fornisce ZeroTier configurato da OpenWISP, non serve WireGuard nel firmware.
+# Le estensioni restano nel repo (config/wireguard.ext, config/zerotier.ext) e
+# la lista globale sopra le elenca: per riattivarne una qui basta aggiungerla.
 # NB: la variante WireGuard include anche VXLAN (vedi config/wireguard.ext).
 openwrt_org_vpn_variants:
   basilicata:
     - "NONE"
-    - "WireGuard"
 
 # Compila anche le varianti con Captive Portal (una build in più per motore CP)
 openwrt_cp_variants: true
