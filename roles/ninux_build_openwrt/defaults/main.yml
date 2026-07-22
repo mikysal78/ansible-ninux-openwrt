@@ -11,12 +11,15 @@ openwrt_version: "v25.12.5"
 openwrt_target: "glinet_gl-mt300n-v2"
 openwrt_org: "default"
 openwrt_captive_portal: false
-# Motore Captive Portal della singola build: chilli | uspot (mai insieme)
-openwrt_cp_engine: "chilli"
+# Motore Captive Portal della singola build
+openwrt_cp_engine: "uspot"
 # Motori CP per cui generare una build separata quando openwrt_cp_variants: true
 openwrt_cp_engines:
-  - "chilli"
+  - "uspot"
 openwrt_vpn: "NONE"
+
+# Modalita' del ruolo: full | ib-seed | ib-image (vedi tasks/main.yml)
+openwrt_role_mode: "full"
 
 # Alias accettati per le varianti VPN (chiave in minuscolo -> nome canonico).
 # Canonici: NONE, ZeroTier, WireGuard, Dual
@@ -41,6 +44,11 @@ openwrt_ccache_enabled: true
 openwrt_ccache_dir: "/var/cache/openwrt-ccache"
 openwrt_ccache_maxsize: "20G"
 
+# ImageBuilder: vedi config/build.yml per la spiegazione completa
+openwrt_use_imagebuilder: false
+openwrt_ib_cache_dir: "{{ openwrt_build_basedir }}/imagebuilder"
+openwrt_ib_force_seed: false
+
 openwrt_tmpfs_enabled: true
 openwrt_tmpfs_size: "8G"
 openwrt_tmpfs_path: "/mnt/openwrt-tmpfs"
@@ -51,7 +59,6 @@ openwrt_make_jobs_extra: 2
 openwrt_upstream_repo: "https://github.com/openwrt/openwrt.git"
 
 openwrt_feeds:
-  - "src-git chilli https://github.com/mikysal78/coova-chilli-openwrt.git"
   - "src-git openwisp_config https://github.com/openwisp/openwisp-config.git"
   - "src-git openwisp_monitoring https://github.com/openwisp/openwrt-openwisp-monitoring.git"
   - "src-git zerotier https://github.com/mwarning/zerotier-openwrt.git"
@@ -93,6 +100,8 @@ openwrt_build_deps:
   - liblzma-dev
   - libpam0g-dev
   - cpio
+  # scompattare il tarball dell'ImageBuilder (.tar.zst)
+  - zstd
 
 openwisp_upload_enabled: false
 openwisp_url: ""

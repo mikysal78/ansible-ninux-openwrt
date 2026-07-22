@@ -2,7 +2,6 @@
 # verify: cosa sarebbe finito davvero nei firmware e sul controller.
 #
 # Le attese qui sotto sono le regole del progetto, scritte una volta sola:
-#   - chilli e uspot non stanno mai nella stessa immagine;
 #   - i config del captive portal e della VPN entrano SOLO nella variante che
 #     li usa (in passato /etc/config/chilli finiva in tutte le immagini);
 #   - mesh e portale li configura OpenWISP con i suoi template: nel firmware
@@ -21,7 +20,7 @@
     t_expected:
       VPN-NONE_CP-nessuno:
         config_yes: []
-        config_no: ["uspot", "coova-chilli", "zerotier", "wireguard-tools", "kmod-vxlan", "avahi-autoipd"]
+        config_no: ["uspot", "zerotier", "wireguard-tools", "kmod-vxlan", "avahi-autoipd"]
         overlay_yes: ["etc/config/openwisp", "etc/uci-defaults/99-dnsmasq", "etc/uci-defaults/99-hostname"]
         overlay_no:
           - "etc/config/chilli"
@@ -34,7 +33,7 @@
 
       VPN-WireGuard_CP-uspot:
         config_yes: ["uspot", "uspot-www", "uspotfilter", "wireguard-tools", "kmod-wireguard", "kmod-vxlan", "vxlan"]
-        config_no: ["coova-chilli", "zerotier", "avahi-autoipd"]
+        config_no: ["zerotier", "avahi-autoipd"]
         overlay_yes: ["etc/config/uspot", "etc/config/openwisp", "etc/uci-defaults/99-dnsmasq"]
         overlay_no:
           - "etc/config/chilli"
@@ -44,16 +43,16 @@
           - "etc/uci-defaults/99-mesh"
           - "etc/uci-defaults/99-br-cp"
 
-      VPN-Dual_CP-chilli:
-        config_yes: ["coova-chilli", "zerotier", "wireguard-tools", "kmod-vxlan"]
-        config_no: ["uspot", "avahi-autoipd"]
+      VPN-Dual_CP-uspot:
+        config_yes: ["uspot", "zerotier", "wireguard-tools", "kmod-vxlan"]
+        config_no: ["avahi-autoipd"]
         overlay_yes:
-          - "etc/config/chilli"
+          - "etc/config/uspot"
           - "etc/config/zerotier"
           - "etc/uci-defaults/99-zerotier"
           - "etc/config/openwisp"
         overlay_no:
-          - "etc/config/uspot"
+          - "etc/config/chilli"
           - "etc/uci-defaults/99-uspot"
           - "etc/uci-defaults/99-mesh"
           - "etc/uci-defaults/99-br-cp"
@@ -127,20 +126,17 @@
         that:
           # NONE: nessun captive portal, nessuna VPN
           - not _img["v25.12.5-glinet_gl-mt-VPN-NO"].uspot
-          - not _img["v25.12.5-glinet_gl-mt-VPN-NO"].chilli
           - not _img["v25.12.5-glinet_gl-mt-VPN-NO"].wireguard
           - not _img["v25.12.5-glinet_gl-mt-VPN-NO"].zerotier
-          # basilicata oggi: uspot + WireGuard con VXLAN, senza chilli ne' ZeroTier
+          # basilicata oggi: uspot + WireGuard con VXLAN, senza ZeroTier
           - _img["v25.12.5-glinet_gl-mt-US-VPN-WG"].uspot
           - _img["v25.12.5-glinet_gl-mt-US-VPN-WG"].wireguard
           - _img["v25.12.5-glinet_gl-mt-US-VPN-WG"].vxlan
-          - not _img["v25.12.5-glinet_gl-mt-US-VPN-WG"].chilli
           - not _img["v25.12.5-glinet_gl-mt-US-VPN-WG"].zerotier
-          # Dual + chilli: entrambe le VPN, chilli e non uspot
-          - _img["v25.12.5-glinet_gl-mt-CP-VPN-DV"].chilli
+          # Dual + portale: entrambe le VPN e uspot
+          - _img["v25.12.5-glinet_gl-mt-CP-VPN-DV"].uspot
           - _img["v25.12.5-glinet_gl-mt-CP-VPN-DV"].zerotier
           - _img["v25.12.5-glinet_gl-mt-CP-VPN-DV"].wireguard
-          - not _img["v25.12.5-glinet_gl-mt-CP-VPN-DV"].uspot
         fail_msg: "Il firmware caricato su OpenWISP non contiene i pacchetti della sua variante: {{ _img }}"
 
     - name: I pacchetti autoip non stanno piu' in nessuna immagine (mesh gestita da OpenWISP)

@@ -126,7 +126,7 @@
     _ow_cp_abbr: >-
       {{
         '' if not openwrt_captive_portal | bool
-        else ('CP-' if openwrt_cp_engine == 'chilli' else 'US-')
+        else 'US-'
       }}
 
 - name: "[OpenWISP] Calcola versione build"

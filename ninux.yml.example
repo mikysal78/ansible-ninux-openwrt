@@ -207,7 +207,6 @@ openwrt_clean_build_targets:
 # -----------------------------------------------------------------------------
 
 openwrt_feeds:
-  - "src-git chilli https://github.com/mikysal78/coova-chilli-openwrt.git"
   - "src-git openwisp_config https://github.com/openwisp/openwisp-config.git"
   - "src-git openwisp_monitoring https://github.com/openwisp/openwrt-openwisp-monitoring.git"
   - "src-git zerotier https://github.com/mwarning/zerotier-openwrt.git"

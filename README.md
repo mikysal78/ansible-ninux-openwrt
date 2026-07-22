@@ -33,7 +33,6 @@ ansible-ninux-openwrt/
 │
 ├── config/
 │   ├── base.config                      <- Pacchetti comuni a tutti i target
-│   ├── chilli.ext                       <- Estensione Captive Portal (coova-chilli)
 │   ├── uspot.ext                        <- Estensione Captive Portal (uspot) — build separata
 │   ├── zerotier.ext                     <- Estensione ZeroTier VPN
 │   ├── wireguard.ext                    <- Estensione WireGuard VPN (include VXLAN)
@@ -279,13 +278,13 @@ Pipeline e Git sono già inclusi nei plugin suggeriti.
 | `OPENWRT_VERSION` | `v25.12.5` | Tag OpenWrt |
 | `VPN_VARIANTS` | `ALL` | `ALL` / `NONE` / `ZeroTier` / `WireGuard` / `Dual` |
 | `CAPTIVE_PORTAL_VARIANTS` | true | Compila anche varianti con CP (come `openwrt_cp_variants` in ninux.yml) |
-| `CAPTIVE_PORTAL_ENGINE` | `config` | Motore CP: `config` usa ninux.yml (override per org, es. basilicata=uspot); `chilli` / `uspot` / `ALL` lo forzano (build separate) |
+| `CAPTIVE_PORTAL_ENGINE` | `config` | Motore CP: `config` usa ninux.yml (con eventuali override per org), `uspot` lo forza. Unico motore disponibile |
 | `SKIP_DEPS` | false | Salta `apt install` (dopo il primo run) |
 | `TMPFS_ENABLED` | true | RAM disk per `tmp/` (+30% velocità) |
 | `TMPFS_SIZE` | `8G` | Dimensione tmpfs |
 | `CCACHE_DIR` | `/var/cache/openwrt-ccache` | ccache persistente |
 | `CCACHE_SIZE` | `20G` | Dimensione massima ccache |
-| `OPENWISP_UPLOAD` | false | Upload su OpenWISP Firmware Upgrader |
+| `OPENWISP_UPLOAD` | `config` | Upload su OpenWISP: `config` segue ninux.yml, `on`/`off` forzano |
 | `OPENWISP_TRIGGER_UPGRADE` | false | Avvia batch upgrade OpenWISP |
 | `OPENWISP_URL` | `` | URL istanza OpenWISP Firmware Upgrader |
 
@@ -325,7 +324,7 @@ openwrt_org_vpn_variants:
   basilicata: [NONE, WireGuard]
 
 # Motori Captive Portal: una build separata per ognuno (mai insieme)
-openwrt_cp_engines: [chilli]
+openwrt_cp_engines: [uspot]
 
 # openwisp-config per org (shared_secret cifrata con encrypt_string)
 openwisp_orgs:
@@ -462,13 +461,12 @@ Cosa contiene e cosa va adattato:
 | `etc/uci-defaults/99-hostname` | Prefisso hostname dei nodi |
 | `etc/uci-defaults/99-dnsmasq`  | DNS della mesh e whitelist DNS-rebind (aggiungi i domini dell'org: senza, il controller OpenWISP non si risolve se punta a IP privati) |
 | `etc/config/watchcat`          | Riavvio automatico su perdita connettività |
-| `etc/config/chilli`            | Config coova-chilli (solo build con CP chilli) |
 | `etc/config/zerotier`          | Config ZeroTier (solo build con VPN ZeroTier/Dual) |
 | `etc/config/openwisp`          | **Non toccare**: se l'org è in `openwisp_orgs` viene rigenerato dalla build |
 
 L'uci-default `99-zerotier` (VPN ZeroTier/Dual) è generato dal template del
 ruolo: non va creato a mano. **Rete mesh e captive portal non stanno nel
-firmware**: bridge `br-cp` e configurazione di chilli/uspot arrivano da
+firmware**: bridge `br-cp` e configurazione di uspot arrivano da
 OpenWISP come template, il firmware porta solo i pacchetti e i file di config
 vuoti.
 
@@ -484,7 +482,7 @@ openwrt_org_vpn_variants:
 # opzionale: motore Captive Portal diverso dal globale
 openwrt_org_cp_engines:
   esempio:
-    - "uspot"         # chilli e uspot non convivono: build separate
+    - "uspot"         # unico motore CP disponibile
 ```
 
 **4. openwisp-config** (`ninux.yml`) — perché i nodi si registrino al controller.
@@ -543,21 +541,9 @@ Su Jenkins basta scrivere `esempio` nel parametro `OPENWRT_ORG`.
 ansible-playbook playbooks/build_all.yml \
   --vault-password-file /var/lib/jenkins/.vault_pass
 
-# Con Captive Portal chilli (2x build per device: senza CP + chilli)
+# Con Captive Portal (2x build per device: senza CP + uspot)
 ansible-playbook playbooks/build_all.yml \
   -e openwrt_cp_variants=true \
-  --vault-password-file /var/lib/jenkins/.vault_pass
-
-# Con Captive Portal uspot al posto di chilli (build separate, mai insieme)
-ansible-playbook playbooks/build_all.yml \
-  -e openwrt_cp_variants=true \
-  -e '{"openwrt_cp_engines": ["uspot"], "openwrt_org_cp_engines": {}}' \
-  --vault-password-file /var/lib/jenkins/.vault_pass
-
-# Entrambi i motori: 3x build per device (senza CP + chilli + uspot)
-ansible-playbook playbooks/build_all.yml \
-  -e openwrt_cp_variants=true \
-  -e '{"openwrt_cp_engines": ["chilli", "uspot"], "openwrt_org_cp_engines": {}}' \
   --vault-password-file /var/lib/jenkins/.vault_pass
 
 # Solo alcune varianti VPN
@@ -615,6 +601,56 @@ quindi il parallelo è efficiente senza moltiplicare RAM/disco.
 | ccache (dalla 2a build) | **-70%** tempo |
 | tmpfs per `tmp/` | **-30%** I/O |
 | 4 varianti in parallelo | **-60%** per device |
+
+### ImageBuilder (sperimentale)
+
+Le varianti dello stesso device differiscono solo per **quali** pacchetti sono
+installati, non per come sono compilati. Ricompilare toolchain, kernel e
+pacchetti a ogni variante è lavoro buttato.
+
+Con `openwrt_use_imagebuilder: true` la build diventa a due tempi:
+
+```
+Device 1
+  ├── seed  (1 compilazione completa, superset delle varianti)  ~30-60 min
+  │     └── produce openwrt-imagebuilder-*.tar.zst + repo pacchetti
+  └── per ogni variante: make image dall'ImageBuilder            ~1-3 min
+```
+
+Con la matrice attuale di basilicata (2 VPN × 2 CP = 4 varianti/device) si
+passa da 4 compilazioni complete a 1 + 4 assemblaggi.
+
+Da Jenkins: parametro `USE_IMAGEBUILDER`. Da riga di comando:
+
+```bash
+ansible-playbook playbooks/build_all.yml -e openwrt_use_imagebuilder=true
+```
+
+**Un seed per device.** Presuppone che tutti i motori in `openwrt_cp_engines`
+siano compilabili insieme: vale con uspot, unico motore rimasto. Un motore che
+imponesse scelte di compilazione incompatibili (com'era coova-chilli, che
+richiedeva firewall3 + iptables legacy contro firewall4 + nftables)
+richiederebbe di nuovo un seed separato per motore.
+
+**Cache.** Gli ImageBuilder restano in `build/imagebuilder/<versione>/<org>/
+<device>/` e sopravvivono alla pulizia post-build: una build
+successiva sullo stesso device parte già dagli assemblaggi. Dopo aver
+modificato `base.config`, un `.config` di device o i feed, il seed va rifatto:
+`openwrt_ib_force_seed: true` (Jenkins: `IB_FORCE_SEED`).
+
+**Composizione delle varianti.** `roles/ninux_build_openwrt/files/ib_packages.py`
+traduce i `.config`/`.ext` del repo nella lista `PACKAGES` per `make image`, così
+la composizione resta definita in un posto solo. Distingue rimozioni esplicite
+(`# CONFIG_PACKAGE_x is not set`: deliberate, sempre applicate) da quelle
+implicite (pacchetti di un'estensione non usata in questa variante), che vengono filtrate contro i pacchetti di default del target
+per non togliere per sbaglio componenti base.
+
+I nomi dei file prodotti sono identici a quelli del percorso normale: release
+GitHub e upload OpenWISP non cambiano.
+
+> Percorso sperimentale, `false` di default. Se un assemblaggio fallisce, il
+> sospetto numero uno è una rimozione implicita che ha tolto una dipendenza:
+> il log mostra la lista `PACKAGES` completa prima di `make image`.
 
 ### Proxmox LXC e tmpfs
 
@@ -811,8 +847,15 @@ CaptivePortal_VPN-WireGuard_glinet_gl-mt300n-v2_openwrt-...-squashfs-sysupgrade.
 
 ### Attivazione da Jenkins
 
-Spunta il parametro **`GITHUB_RELEASE`** al lancio del job,
-oppure imposta `github_release_enabled: true` in `ninux.yml` per abilitarlo sempre.
+Imposta `github_release_enabled: true` in `ninux.yml` per abilitarlo sempre,
+oppure usa il parametro **`GITHUB_RELEASE`** al lancio del job: `config` segue
+ninux.yml, `on` e `off` lo forzano.
+
+> `GITHUB_RELEASE` e `OPENWISP_UPLOAD` erano booleani, ma un booleano non sa
+> dire "no": con `github_release_enabled: true` in `ninux.yml` la release
+> partiva comunque, anche a parametro deselezionato. Sono diventati a tre stati
+> per questo — una build di prova pubblicava firmware sul repo pubblico e sul
+> controller credendo di non farlo.
 
 ---
 
@@ -827,7 +870,7 @@ output/
         │   ├── VPN-ZeroTier/glinet_gl-mt300n-v2/
         │   ├── VPN-WireGuard/glinet_gl-mt300n-v2/
         │   └── VPN-Dual/glinet_gl-mt300n-v2/
-        ├── CaptivePortal/           <- coova-chilli
+        ├── CaptivePortal-uspot/     <- uspot
         │   └── VPN-*/...
         └── CaptivePortal-uspot/     <- uspot (build separata)
             └── VPN-*/...
@@ -867,9 +910,8 @@ sono finti solo i due pezzi impossibili da avere in CI.
 
 Vengono compilate tre varianti di un solo device (`glinet_gl-mt300n-v2`): nessuna
 VPN senza portale, il caso reale di basilicata (**uspot + WireGuard con VXLAN**)
-e **Dual + chilli**. Le regole verificate sono quelle del progetto:
+e **Dual + uspot**. Le regole verificate sono quelle del progetto:
 
-- chilli e uspot non stanno mai nella stessa immagine;
 - i config di captive portal e VPN entrano **solo** nella variante che li usa
   (in passato `/etc/config/chilli` finiva in *tutte* le immagini);
 - nel firmware non ci sono uci-defaults di rete né i pacchetti autoip: mesh e

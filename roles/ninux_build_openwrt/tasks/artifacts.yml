@@ -6,8 +6,7 @@
     _cp_flavor: >-
       {{
         'Standard' if not openwrt_captive_portal | bool
-        else ('CaptivePortal' if openwrt_cp_engine == 'chilli'
-              else 'CaptivePortal-' + openwrt_cp_engine)
+        else 'CaptivePortal-' + openwrt_cp_engine
       }}
 
 - name: Calcola percorsi artefatti

@@ -110,7 +110,9 @@
           Device         : {{ _discovered_targets | join(', ') }}
           Varianti/device: {{ _variant_matrix | length }}
           Totale firmware: {{ _discovered_targets | length * _variant_matrix | length }}
-          Strategia      : 1 device per volta, {{ _variant_matrix | length }} varianti in parallelo
+          Strategia      : {{ 'ImageBuilder — 1 seed per device, poi assemblaggio delle varianti'
+                              if openwrt_use_imagebuilder | bool
+                              else '1 device per volta, ' ~ _variant_matrix | length ~ ' varianti in parallelo' }}
           Jobs make      : {{ ansible_processor_nproc | int + openwrt_make_jobs_extra | default(2) | int }}
           ccache         : {{ openwrt_ccache_dir }} ({{ openwrt_ccache_maxsize }})
           tmpfs          : {{ openwrt_tmpfs_enabled }} ({{ openwrt_tmpfs_size }})
@@ -123,12 +125,21 @@
           {% endfor %}
 
   tasks:
-    - name: "Build device per device"
+    - name: "Build device per device (compilazione completa per variante)"
       ansible.builtin.include_tasks: _build_device_variants.yml
       loop: "{{ _discovered_targets }}"
       loop_control:
         loop_var: target_item
         label: "{{ target_item }}"
+      when: not openwrt_use_imagebuilder | bool
+
+    - name: "Build device per device (ImageBuilder)"
+      ansible.builtin.include_tasks: _build_device_variants_ib.yml
+      loop: "{{ _discovered_targets }}"
+      loop_control:
+        loop_var: target_item
+        label: "{{ target_item }}"
+      when: openwrt_use_imagebuilder | bool
 
   post_tasks:
     - name: Pulizia finale

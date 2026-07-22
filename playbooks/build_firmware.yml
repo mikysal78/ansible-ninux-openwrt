@@ -74,7 +74,7 @@
       vars:
         openwrt_vpn: "{{ item.vpn }}"
         openwrt_captive_portal: "{{ item.cp }}"
-        openwrt_cp_engine: "{{ item.engine | default('chilli') }}"
+        openwrt_cp_engine: "{{ item.engine | default('uspot') }}"
       loop: "{{ _build_matrix }}"
       loop_control:
         label: "VPN={{ item.vpn }} CP={{ item.engine if item.cp else 'NO' }}"

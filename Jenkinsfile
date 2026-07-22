@@ -29,8 +29,18 @@ pipeline {
         )
         choice(
             name: 'CAPTIVE_PORTAL_ENGINE',
-            choices: ['config', 'chilli', 'uspot', 'ALL'],
-            description: 'Motore Captive Portal: "config" usa ninux.yml (incl. override per org, es. basilicata=uspot); gli altri forzano il motore. Build separate, mai chilli e uspot insieme (ALL = una build per motore)'
+            choices: ['config', 'uspot'],
+            description: 'Motore Captive Portal: "config" usa ninux.yml (incl. eventuali override per org); "uspot" lo forza. Oggi uspot e\' l\'unico motore (coova-chilli rimosso).'
+        )
+        booleanParam(
+            name: 'USE_IMAGEBUILDER',
+            defaultValue: false,
+            description: 'Compila UN seed per device e assembla le varianti con l\'ImageBuilder invece di ricompilare ogni variante da sorgente. Molto piu\' veloce quando le varianti per device sono piu\' di una.'
+        )
+        booleanParam(
+            name: 'IB_FORCE_SEED',
+            defaultValue: false,
+            description: 'Ricompila il seed anche se un ImageBuilder e\' gia\' in cache (serve dopo modifiche a base.config, ai .config dei device o ai feed). Ignorato se USE_IMAGEBUILDER e\' false.'
         )
         booleanParam(
             name: 'SKIP_DEPS',
@@ -57,10 +67,10 @@ pipeline {
             defaultValue: '20G',
             description: 'Dimensione max ccache'
         )
-        booleanParam(
+        choice(
             name: 'OPENWISP_UPLOAD',
-            defaultValue: false,
-            description: 'Carica su OpenWISP Firmware Upgrader'
+            choices: ['config', 'on', 'off'],
+            description: 'Carica su OpenWISP Firmware Upgrader: "config" segue openwisp_upload_enabled di ninux.yml, "on"/"off" lo forzano. Era un booleano, ma un booleano non sa dire "no": con openwisp_upload_enabled: true in ninux.yml, deselezionarlo non disattivava niente.'
         )
         booleanParam(
             name: 'OPENWISP_TRIGGER_UPGRADE',
@@ -72,10 +82,10 @@ pipeline {
             defaultValue: '',
             description: 'URL OpenWISP Firmware Upgrader (vuoto = da group_vars)'
         )
-        booleanParam(
+        choice(
             name: 'GITHUB_RELEASE',
-            defaultValue: false,
-            description: 'Crea release GitHub e carica i firmware come assets'
+            choices: ['config', 'on', 'off'],
+            description: 'Crea release GitHub coi firmware come asset: "config" segue github_release_enabled di ninux.yml, "on"/"off" lo forzano. Stesso motivo di OPENWISP_UPLOAD: da booleano non era possibile disattivarlo.'
         )
         string(
             name: 'GITHUB_REPO',
@@ -107,10 +117,9 @@ pipeline {
                     if (!configs) error "Nessun .config in ${configDir}"
                     def nDev  = params.DEVICES?.trim() ? params.DEVICES.trim().split(',').size() : configs.split('\n').size()
                     def nVpn  = params.VPN_VARIANTS == 'ALL' ? 4 : 1
-                    // "config": i motori li decide ninux.yml (di solito 1 per org),
-                    // il totale esatto lo stampa il playbook nel suo Piano di build
-                    def nEng  = params.CAPTIVE_PORTAL_ENGINE == 'ALL' ? 2 : 1
-                    def nCp   = params.CAPTIVE_PORTAL_VARIANTS ? 1 + nEng : 1
+                    // Un solo motore CP (uspot); il totale esatto lo stampa
+                    // comunque il playbook nel suo Piano di build
+                    def nCp   = params.CAPTIVE_PORTAL_VARIANTS ? 2 : 1
                     def total = nDev * nVpn * nCp
                     def engineLabel = params.CAPTIVE_PORTAL_VARIANTS
                         ? (params.CAPTIVE_PORTAL_ENGINE == 'config' ? 'da ninux.yml (override per org)' : params.CAPTIVE_PORTAL_ENGINE)
@@ -172,15 +181,21 @@ Workspace : ${WORKSPACE}
                     // per org): non passare nulla, cosi' basilicata compila uspot.
                     // Un motore esplicito forza la scelta e azzera l'override org.
                     if (params.CAPTIVE_PORTAL_VARIANTS && params.CAPTIVE_PORTAL_ENGINE != 'config') {
-                        def engines = params.CAPTIVE_PORTAL_ENGINE == 'ALL' ? ['chilli', 'uspot'] : [params.CAPTIVE_PORTAL_ENGINE]
-                        def enginesJson = engines.collect { "\"${it}\"" }.join(', ')
+                        def enginesJson = "\"${params.CAPTIVE_PORTAL_ENGINE}\""
                         args << "-e '{\"openwrt_cp_engines\": [${enginesJson}], \"openwrt_org_cp_engines\": {}}'"
                     }
-                    if (params.OPENWISP_UPLOAD) {
-                        args << "-e openwisp_upload_enabled=true"
-                        if (params.OPENWISP_TRIGGER_UPGRADE) args << "-e openwisp_trigger_upgrade=true"
-                        if (params.OPENWISP_URL)             args << "-e openwisp_url=${params.OPENWISP_URL}"
+                    // 'config' = non passare nulla, decide ninux.yml.
+                    // Passare esplicitamente false e' l'unico modo per spegnere
+                    // un openwisp_upload_enabled: true che arriva da ninux.yml.
+                    if (params.OPENWISP_UPLOAD != 'config') {
+                        args << "-e openwisp_upload_enabled=${params.OPENWISP_UPLOAD == 'on'}"
                     }
+                    if (params.USE_IMAGEBUILDER) {
+                        args << "-e openwrt_use_imagebuilder=true"
+                        args << "-e openwrt_ib_force_seed=${params.IB_FORCE_SEED}"
+                    }
+                    if (params.OPENWISP_TRIGGER_UPGRADE) args << "-e openwisp_trigger_upgrade=true"
+                    if (params.OPENWISP_URL)             args << "-e openwisp_url=${params.OPENWISP_URL}"
                     args << "--vault-password-file ${VAULT_PASS_FILE}"
                     sh args.join(' ')
 
@@ -246,7 +261,8 @@ Workspace : ${WORKSPACE}
         stage('GitHub Release') {
             when {
                 expression {
-                    params.GITHUB_RELEASE || sh(
+                    if (params.GITHUB_RELEASE != 'config') return params.GITHUB_RELEASE == 'on'
+                    return sh(
                         script: "grep -qE '^github_release_enabled:\\s*true' ${WORKSPACE}/ninux.yml && echo yes || echo no",
                         returnStdout: true
                     ).trim() == 'yes'

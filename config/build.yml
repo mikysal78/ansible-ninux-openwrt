@@ -36,10 +36,11 @@ openwrt_vpn_variants:
 # Compila anche le varianti con Captive Portal (una build in più per motore CP)
 openwrt_cp_variants: true
 
-# Motori Captive Portal — una build separata per ognuno (chilli e uspot
-# non convivono: iptables legacy vs firewall4/nftables)
+# Motori Captive Portal — una build separata per ognuno.
+# Oggi ne esiste uno solo (uspot); la lista resta perche' la matrice di
+# build e i nomi degli artefatti sono gia' parametrici sul motore.
 openwrt_cp_engines:
-  - "chilli"
+  - "uspot"
 
 # -----------------------------------------------------------------------------
 # PERCORSI
@@ -91,6 +92,41 @@ openwrt_ccache_dir: "/var/cache/openwrt-ccache"
 openwrt_ccache_maxsize: "20G"
 
 # -----------------------------------------------------------------------------
+# PERFORMANCE - ImageBuilder
+#
+# Percorso normale: ogni variante (device x VPN x Captive Portal) e' una
+# compilazione completa da sorgente. Le varianti dello stesso device pero'
+# differiscono solo per QUALI pacchetti sono installati, non per come sono
+# compilati: ricompilare toolchain, kernel e pacchetti ogni volta e' lavoro
+# buttato.
+#
+# Percorso ImageBuilder: per ogni device si compila UNA volta un "seed" che e'
+# il superset delle varianti (tutte le VPN, tutti i motori CP). Il seed produce
+# un ImageBuilder standalone con dentro tutti i pacchetti compilati (base.config
+# ha gia' CONFIG_IB=y e CONFIG_IB_STANDALONE=y). Le varianti vengono poi
+# assemblate da quell'ImageBuilder in un paio di minuti l'una.
+#
+# Con l'attuale matrice basilicata (2 VPN x 2 CP = 4 varianti/device) si passa
+# da 4 compilazioni complete a 1 + 4 assemblaggi.
+#
+# I nomi dei file prodotti sono identici a quelli del percorso normale:
+# release GitHub e upload OpenWISP non cambiano.
+openwrt_use_imagebuilder: false
+
+# Dove conservare gli ImageBuilder estratti, per versione/org/device/gruppo.
+# Sopravvive tra le build: un device gia' "seedato" riparte dagli assemblaggi.
+openwrt_ib_cache_dir: "{{ openwrt_build_basedir }}/imagebuilder"
+
+# Ricompila il seed anche se in cache (dopo modifiche a base.config o ai feed)
+openwrt_ib_force_seed: false
+
+# NB: un solo seed per device presuppone che tutti i motori in
+# openwrt_cp_engines siano compilabili insieme. Vale con uspot, unico motore
+# rimasto. Un motore che imponga scelte di compilazione incompatibili (com'era
+# coova-chilli, che richiedeva firewall3 + iptables legacy contro firewall4 +
+# nftables) richiederebbe di nuovo un seed separato per motore.
+
+# -----------------------------------------------------------------------------
 # PERFORMANCE - tmpfs (RAM disk per directory temporanee build)
 # -----------------------------------------------------------------------------
 
@@ -126,7 +162,6 @@ openwrt_clean_build_targets:
 # -----------------------------------------------------------------------------
 
 openwrt_feeds:
-  - "src-git chilli https://github.com/mikysal78/coova-chilli-openwrt.git"
   - "src-git openwisp_config https://github.com/openwisp/openwisp-config.git"
   - "src-git openwisp_monitoring https://github.com/openwisp/openwrt-openwisp-monitoring.git"
   - "src-git zerotier https://github.com/mwarning/zerotier-openwrt.git"
@@ -240,3 +275,5 @@ openwrt_build_deps:
   - liblzma-dev
   - libpam0g-dev
   - cpio
+  # scompattare il tarball dell'ImageBuilder (.tar.zst)
+  - zstd

@@ -74,14 +74,15 @@
     src: "{{ t_snapshot_dir }}/{{ variant.key }}/feeds.conf"
   register: _feeds_raw
 
-- name: "[{{ variant.key }}] I feed Ninux ci sono e telephony e' stato tolto"
+- name: "[{{ variant.key }}] I feed Ninux ci sono, chilli e telephony no"
   ansible.builtin.assert:
     that:
-      - "'src-git chilli' in (_feeds_raw.content | b64decode)"
       - "'src-git openwisp_config' in (_feeds_raw.content | b64decode)"
       - "'src-git zerotier' in (_feeds_raw.content | b64decode)"
       - "'telephony' not in (_feeds_raw.content | b64decode)"
-    fail_msg: "feeds.conf non contiene i feed Ninux, o non ha rimosso telephony"
+      # coova-chilli e' stato rimosso: il suo feed non deve tornare
+      - "'coova-chilli' not in (_feeds_raw.content | b64decode)"
+    fail_msg: "feeds.conf non contiene i feed Ninux, o contiene feed rimossi"
 
 - name: "[{{ variant.key }}] Il firmware e' finito nel percorso di output giusto"
   ansible.builtin.stat:

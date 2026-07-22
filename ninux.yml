@@ -55,19 +55,15 @@ openwrt_org_vpn_variants:
 openwrt_cp_variants: true
 
 # Motori Captive Portal: una build SEPARATA per ognuno.
-# chilli e uspot non convivono sullo stesso router (chilli usa iptables legacy,
-# uspot firewall4/nftables), quindi mai nella stessa immagine.
-# Valori: chilli, uspot
+# Oggi ne esiste uno solo, uspot (coova-chilli e' stato rimosso).
 openwrt_cp_engines:
-  - "chilli"
+  - "uspot"
 
 # Override motori CP per organizzazione — vince sulla lista globale.
-# basilicata prova uspot al posto di chilli.
-# Per tornare a chilli: rimetti "chilli" al posto di "uspot".
-# Per compilarli entrambi (build separate): elencali tutti e due.
-openwrt_org_cp_engines:
-  basilicata:
-    - "uspot"
+# Con un solo motore disponibile non serve, resta come esempio.
+# openwrt_org_cp_engines:
+#   basilicata:
+#     - "uspot"
 
 
 # -----------------------------------------------------------------------------
@@ -269,7 +265,6 @@ openwrt_clean_build_targets:
 # -----------------------------------------------------------------------------
 
 openwrt_feeds:
-  - "src-git chilli https://github.com/mikysal78/coova-chilli-openwrt.git"
   - "src-git openwisp_config https://github.com/openwisp/openwisp-config.git"
   - "src-git openwisp_monitoring https://github.com/openwisp/openwrt-openwisp-monitoring.git"
   - "src-git zerotier https://github.com/mwarning/zerotier-openwrt.git"
@@ -310,3 +305,5 @@ openwrt_build_deps:
   - liblzma-dev
   - libpam0g-dev
   - cpio
+  # scompattare il tarball dell'ImageBuilder (.tar.zst)
+  - zstd
