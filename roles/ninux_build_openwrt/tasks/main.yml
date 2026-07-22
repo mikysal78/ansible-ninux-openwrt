@@ -59,11 +59,18 @@
   ansible.builtin.include_tasks: clone_ninux.yml
   tags: [clone]
 
-# I sorgenti e i feed servono solo a chi compila davvero: in ib-image
-# l'albero OpenWrt non viene toccato.
+- name: Check ImageBuilder cache
+  ansible.builtin.include_tasks: ib_cache_check.yml
+  when: openwrt_role_mode in ['ib-seed', 'ib-image']
+  tags: [always]
+
+# I sorgenti e i feed servono solo a chi compila davvero: in ib-image l'albero
+# OpenWrt non viene toccato, e in ib-seed nemmeno se l'ImageBuilder e' gia' in
+# cache (il seed verrebbe saltato subito dopo).
 - name: Clone / update OpenWrt upstream source
   ansible.builtin.include_tasks: clone_openwrt.yml
-  when: openwrt_role_mode in ['full', 'ib-seed']
+  when: openwrt_role_mode == 'full' or
+        (openwrt_role_mode == 'ib-seed' and not _ib_seed_ready | default(false) | bool)
   tags: [clone, openwrt]
 
 # L'overlay e' specifico della variante: nel seed non serve (la sua immagine
@@ -75,7 +82,8 @@
 
 - name: Configure feeds
   ansible.builtin.include_tasks: feeds.yml
-  when: openwrt_role_mode in ['full', 'ib-seed']
+  when: openwrt_role_mode == 'full' or
+        (openwrt_role_mode == 'ib-seed' and not _ib_seed_ready | default(false) | bool)
   tags: [feeds, config]
 
 # In ib-seed il .config lo compone ib_dotconfig.yml (superset del gruppo).

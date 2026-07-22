@@ -7,26 +7,18 @@
 # che produce non viene usata, servono solo l'ImageBuilder e il repository di
 # pacchetti che porta con se' (CONFIG_IB_STANDALONE).
 
-- name: "[IB seed] Calcola percorsi cache"
-  ansible.builtin.set_fact:
-    _ib_cache_dir: >-
-      {{ openwrt_ib_cache_dir }}/{{ openwrt_version }}/{{ openwrt_org }}/{{ openwrt_target }}
-
-- name: "[IB seed] Verifica se un ImageBuilder valido e' gia' in cache"
-  ansible.builtin.stat:
-    path: "{{ _ib_cache_dir }}/imagebuilder/Makefile"
-  register: _ib_cached
-
+# _ib_cache_dir e _ib_seed_ready arrivano da ib_cache_check.yml, eseguito
+# prima di clone_openwrt e feeds proprio per poterli saltare.
 - name: "[IB seed] Riusa l'ImageBuilder in cache"
   ansible.builtin.debug:
     msg: >-
       ImageBuilder gia' presente per {{ openwrt_target }}:
       {{ _ib_cache_dir }}/imagebuilder — compilazione del seed saltata.
       Per riforzarla: -e openwrt_ib_force_seed=true
-  when: _ib_cached.stat.exists and not (openwrt_ib_force_seed | default(false) | bool)
+  when: _ib_seed_ready | bool
 
 - name: "[IB seed] Compila il seed"
-  when: not _ib_cached.stat.exists or (openwrt_ib_force_seed | default(false) | bool)
+  when: not _ib_seed_ready | bool
   block:
     - name: "[IB seed] Componi il .config del seed"
       ansible.builtin.include_tasks: ib_dotconfig.yml

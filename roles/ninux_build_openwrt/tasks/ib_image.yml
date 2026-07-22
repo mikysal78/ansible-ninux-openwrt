@@ -7,10 +7,9 @@
 # L'overlay (root_files) lo ha gia' preparato rootfiles.yml in
 # {{ openwrt_src_dir }}/files ed e' specifico di questa variante.
 
+# _ib_cache_dir arriva da ib_cache_check.yml
 - name: "[IB image] Calcola percorsi"
   ansible.builtin.set_fact:
-    _ib_cache_dir: >-
-      {{ openwrt_ib_cache_dir }}/{{ openwrt_version }}/{{ openwrt_org }}/{{ openwrt_target }}
     _ib_bin_dir: "{{ openwrt_src_dir }}/bin/targets/ib/{{ openwrt_target }}"
     # Azzerati a ogni variante: set_fact persiste sull'host e senza reset le
     # liste si accumulerebbero da una variante all'altra.
