@@ -134,9 +134,9 @@
           - _img["v25.12.5-glinet_gl-mt-US-VPN-WG"].vxlan
           - not _img["v25.12.5-glinet_gl-mt-US-VPN-WG"].zerotier
           # Dual + portale: entrambe le VPN e uspot
-          - _img["v25.12.5-glinet_gl-mt-CP-VPN-DV"].uspot
-          - _img["v25.12.5-glinet_gl-mt-CP-VPN-DV"].zerotier
-          - _img["v25.12.5-glinet_gl-mt-CP-VPN-DV"].wireguard
+          - _img["v25.12.5-glinet_gl-mt-US-VPN-DV"].uspot
+          - _img["v25.12.5-glinet_gl-mt-US-VPN-DV"].zerotier
+          - _img["v25.12.5-glinet_gl-mt-US-VPN-DV"].wireguard
         fail_msg: "Il firmware caricato su OpenWISP non contiene i pacchetti della sua variante: {{ _img }}"
 
     - name: I pacchetti autoip non stanno piu' in nessuna immagine (mesh gestita da OpenWISP)

@@ -68,10 +68,12 @@
 
 - name: "[IB image] Ricava il profilo device dal .config del target"
   ansible.builtin.shell:
-    cmd: >-
-      sed -n 's/^CONFIG_TARGET_[a-z0-9_]*_DEVICE_\(.*\)=y$/\1/p'
-      {{ openwrt_ninux_src_dir }}/organizations/{{ openwrt_org }}/{{ openwrt_target }}.config
-      | head -1
+    cmd: |
+      set -o pipefail
+      sed -n 's/^CONFIG_TARGET_[a-z0-9_]*_DEVICE_\(.*\)=y$/\1/p' \
+        {{ openwrt_ninux_src_dir }}/organizations/{{ openwrt_org }}/{{ openwrt_target }}.config \
+        | head -1
+    executable: /bin/bash
   register: _ib_profile_raw
   changed_when: false
 

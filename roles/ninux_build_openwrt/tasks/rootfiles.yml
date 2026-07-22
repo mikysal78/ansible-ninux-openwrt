@@ -1,5 +1,23 @@
 ---
 # tasks/rootfiles.yml - Prepara overlay root_files nel buildroot OpenWrt
+#
+# L'overlay viene costruito da zero in {{ openwrt_src_dir }}/files a ogni
+# variante, partendo da una copia pulita di root_files/<org>/. Le scelte della
+# variante (quale /etc/config tenere, quali uci-defaults generare) si applicano
+# li' dentro.
+#
+# In passato le modifiche venivano fatte sulla copia di staging CONDIVISA
+# (build/ninux-configs/root_files/<org>/), che sopravvive a tutte le varianti e
+# a tutte le build. Finche' quella copia veniva rifatta dal repo prima di ogni
+# variante il trucco reggeva; appena e' diventata unica per run, la prima
+# variante senza captive portal ha cancellato /etc/config/uspot e la variante
+# uspot successiva non l'ha piu' trovato — firmware prodotti senza quel file,
+# senza un errore.
+#
+# Costruire l'overlay dalla sorgente a ogni variante toglie la dipendenza
+# dall'ordine, e con essa i vari "rimuovi residuo di build precedenti" che quel
+# modello richiedeva: la destinazione e' nuova ogni volta, un residuo non puo'
+# esistere.
 
 # -----------------------------------------------------------------------------
 # Risolvi configurazione openwisp-config per questa org
@@ -29,41 +47,38 @@
   when: not _openwisp_enabled | bool
 
 # -----------------------------------------------------------------------------
-# Overlay root_files
+# Overlay: copia pulita, poi personalizzazione per variante
 # -----------------------------------------------------------------------------
 
-- name: Rimuovi overlay files esistente
+- name: Rimuovi overlay della variante precedente
   ansible.builtin.file:
     path: "{{ openwrt_src_dir }}/files"
     state: absent
 
-- name: Crea directory uci-defaults per org
+- name: Copia root_files dell'org nell'overlay
+  ansible.builtin.copy:
+    src: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/"
+    dest: "{{ openwrt_src_dir }}/files/"
+    remote_src: true
+    mode: preserve
+
+- name: Crea le directory dell'overlay
   ansible.builtin.file:
-    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults"
+    path: "{{ openwrt_src_dir }}/files/etc/{{ item }}"
     state: directory
     mode: "0755"
+  loop:
+    - config
+    - uci-defaults
 
-- name: Crea directory etc/config per org (openwisp)
-  ansible.builtin.file:
-    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/config"
-    state: directory
-    mode: "0755"
-  when: _openwisp_enabled | bool
-
-# La staging root_files sopravvive tra le build (clone_ninux copia senza purge):
-# senza questa rimozione, un openwisp generato da una build precedente resta e,
-# se la generazione qui sotto viene saltata (openwisp disabilitato per l'org),
-# finisce comunque cotto nel firmware con URL/secret VECCHI. Rimuovendolo sempre
-# prima, o viene rigenerato fresco (org abilitata) o resta assente.
-- name: Rimuovi /etc/config/openwisp residuo di build precedenti
-  ansible.builtin.file:
-    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/config/openwisp"
-    state: absent
+# -----------------------------------------------------------------------------
+# openwisp-config
+# -----------------------------------------------------------------------------
 
 - name: Genera /etc/config/openwisp da template
   ansible.builtin.template:
     src: openwisp-config.j2
-    dest: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/config/openwisp"
+    dest: "{{ openwrt_src_dir }}/files/etc/config/openwisp"
     mode: "0600"
   when: _openwisp_enabled | bool
   vars:
@@ -71,61 +86,61 @@
     _openwisp_management_interface: "{{ openwisp_orgs[openwrt_org].management_interface }}"
     _openwisp_shared_secret: "{{ openwisp_orgs[openwrt_org].shared_secret }}"
 
-# La rete mesh (bridge br-cp) la configura OpenWISP con un suo template:
-# nessun uci-default nel firmware. Qui si ripuliscono solo i file residui
-# lasciati nell'overlay da build precedenti.
-- name: Rimuovi uci-defaults di rete residui (mesh gestita da OpenWISP)
+# root_files/<org>/ puo' contenerne una copia committata nel repo (e' il caso
+# dell'org di esempio): senza org configurata finirebbe nel firmware con
+# controller e secret di qualcun altro.
+- name: Rimuovi /etc/config/openwisp se l'org non è configurata
   ansible.builtin.file:
-    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/{{ item }}"
+    path: "{{ openwrt_src_dir }}/files/etc/config/openwisp"
     state: absent
-  loop:
-    - 99-mesh
-    - 99-br-cp
+  when: not _openwisp_enabled | bool
 
-# coova-chilli non e' piu' supportato: la staging root_files sopravvive tra le
-# build, quindi un /etc/config/chilli lasciato li' da una build precedente
-# finirebbe ancora dentro il firmware.
-- name: Rimuovi /etc/config/chilli residuo (coova-chilli rimosso)
-  ansible.builtin.file:
-    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/config/chilli"
-    state: absent
-
-- name: Rimuovi /etc/config/zerotier (VPN senza ZeroTier)
-  ansible.builtin.file:
-    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/config/zerotier"
-    state: absent
-  when: _vpn not in ['ZeroTier', 'Dual']
-
+# -----------------------------------------------------------------------------
+# Captive Portal
+#
 # La configurazione del portale la spinge OpenWISP come template: nel firmware
-# c'e' solo /etc/config/uspot vuoto, che il template OpenWISP sovrascrive al
-# primo checkin. Nessun uci-default 99-uspot.
-- name: Rimuovi 99-uspot residuo (la config uspot arriva da OpenWISP)
-  ansible.builtin.file:
-    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-uspot"
-    state: absent
+# c'e' solo /etc/config/uspot vuoto, che il template sovrascrive al primo
+# checkin. Nessun uci-default.
+# -----------------------------------------------------------------------------
 
-- name: Rimuovi /etc/config/uspot (CP disabilitato o motore diverso da uspot)
+- name: Rimuovi /etc/config/uspot (Captive Portal disabilitato)
   ansible.builtin.file:
-    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/config/uspot"
+    path: "{{ openwrt_src_dir }}/files/etc/config/uspot"
     state: absent
   when: not (openwrt_captive_portal | bool and openwrt_cp_engine == 'uspot')
+
+# -----------------------------------------------------------------------------
+# VPN
+# -----------------------------------------------------------------------------
 
 - name: Scrivi uci-default 99-zerotier (ZeroTier / Dual)
   ansible.builtin.template:
     src: 99-zerotier.j2
-    dest: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-zerotier"
+    dest: "{{ openwrt_src_dir }}/files/etc/uci-defaults/99-zerotier"
     mode: "0755"
   when: _vpn in ['ZeroTier', 'Dual']
 
-- name: Rimuovi 99-zerotier (VPN diversa)
+- name: Rimuovi /etc/config/zerotier (VPN senza ZeroTier)
   ansible.builtin.file:
-    path: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/etc/uci-defaults/99-zerotier"
+    path: "{{ openwrt_src_dir }}/files/etc/config/zerotier"
     state: absent
   when: _vpn not in ['ZeroTier', 'Dual']
 
-- name: Copia overlay root_files in openwrt/files/
-  ansible.builtin.copy:
-    src: "{{ openwrt_ninux_src_dir }}/root_files/{{ openwrt_org }}/"
-    dest: "{{ openwrt_src_dir }}/files/"
-    remote_src: true
-    mode: preserve
+# -----------------------------------------------------------------------------
+# Traccia il contenuto: e' l'unico punto in cui si vede cosa finira' davvero
+# nel firmware di QUESTA variante.
+# -----------------------------------------------------------------------------
+
+- name: Elenca l'overlay prodotto
+  ansible.builtin.find:
+    paths: "{{ openwrt_src_dir }}/files"
+    recurse: true
+    file_type: file
+  register: _overlay_files
+
+- name: "Overlay: {{ openwrt_target }} VPN={{ _vpn }} CP={{ openwrt_cp_engine if openwrt_captive_portal | bool else 'NO' }}"
+  ansible.builtin.debug:
+    msg: >-
+      {{ _overlay_files.files | map(attribute='path')
+         | map('regex_replace', '^' ~ openwrt_src_dir ~ '/files/', '')
+         | sort | list }}

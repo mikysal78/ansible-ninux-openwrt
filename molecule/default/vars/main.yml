@@ -52,7 +52,7 @@ t_variants:
     engine: "uspot"
     key: "VPN-Dual_CP-uspot"
     flavor: "CaptivePortal-uspot"
-    build_version: "v25.12.5-glinet_gl-mt-CP-VPN-DV"
+    build_version: "v25.12.5-glinet_gl-mt-US-VPN-DV"
 
 # Variante con il controller OpenWISP irraggiungibile (porta chiusa), come nel
 # guasto reale del 14/07: il server era giu'. La build NON deve fallire — il
