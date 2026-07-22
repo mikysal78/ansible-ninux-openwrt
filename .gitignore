@@ -6,3 +6,7 @@ output/
 
 # Ambiente di test (requirements-dev.txt, molecule)
 .venv/
+
+# bytecode Python (artefatti locali)
+__pycache__/
+*.py[cod]
