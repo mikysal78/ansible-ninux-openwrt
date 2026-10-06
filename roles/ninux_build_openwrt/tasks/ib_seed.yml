@@ -175,6 +175,26 @@
     force: false
     mode: "0644"
 
+# Il repository dell'ImageBuilder deve contenere l'uspot pinnato in
+# files/feed-overrides/: un uspot di altra versione (es. 913980c0 col typo che
+# manda il daemon in crash-loop) farebbe uscire firmware col captive rotto.
+- name: "[IB seed] Cerca uspot nel repository dell'ImageBuilder"
+  ansible.builtin.find:
+    paths: "{{ _ib_cache_dir }}/imagebuilder/packages"
+    patterns: "uspot-[0-9]*"
+  register: _ib_uspot
+
+- name: "[IB seed] Verifica la versione di uspot"
+  vars:
+    _uspot_pin: >-
+      {{ lookup('file', 'feed-overrides/packages/net/uspot/Makefile')
+         | regex_search('PKG_SOURCE_VERSION:=(\w{8})', '\1') | first }}
+    _uspot_found: "{{ _ib_uspot.files | map(attribute='path') | map('basename') | list }}"
+  ansible.builtin.assert:
+    that: _uspot_found | reject('search', '~' ~ _uspot_pin ~ '-') | list | length == 0
+    fail_msg: "uspot nell'ImageBuilder non e' la versione pinnata ({{ _uspot_pin }}): {{ _uspot_found }}"
+    success_msg: "uspot: {{ _uspot_found }}"
+
 - name: "[IB seed] Verifica il profilo richiesto nell'ImageBuilder"
   ansible.builtin.shell: |
     set -o pipefail

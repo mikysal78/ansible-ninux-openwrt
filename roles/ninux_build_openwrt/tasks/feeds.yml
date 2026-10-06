@@ -1,12 +1,31 @@
 ---
 # tasks/feeds.yml - feeds.conf, update e install
 
-- name: Copia i feed custom locali (es. uspot) nel build dir
-  ansible.builtin.copy:
-    src: "custom-feeds/"
-    dest: "{{ openwrt_build_basedir }}/custom-feeds/"
-    mode: preserve
-  changed_when: true
+# Residui del vecchio feed locale 'uspot' (src-link a custom-feeds/), sostituito
+# dagli override in files/feed-overrides/: nelle build dir persistenti i link
+# rimasti farebbero esistere uspot in due feed.
+- name: Rimuovi i residui del vecchio feed locale uspot
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "{{ openwrt_src_dir }}/package/feeds/uspot"
+    - "{{ openwrt_src_dir }}/feeds/uspot"
+    - "{{ openwrt_src_dir }}/feeds/uspot.index"
+    - "{{ openwrt_src_dir }}/feeds/uspot.targetindex"
+    - "{{ openwrt_build_basedir }}/custom-feeds"
+
+# Gli override scrivono dentro i checkout git dei feed: vanno annullati prima
+# dell'update, altrimenti 'git pull' trova l'albero sporco.
+- name: Annulla gli override dei feed della build precedente
+  ansible.builtin.shell: |
+    for d in feeds/*/; do
+      [ -d "$d/.git" ] && git -C "$d" checkout -- . 2>/dev/null
+    done
+    exit 0
+  args:
+    chdir: "{{ openwrt_src_dir }}"
+  changed_when: false
 
 - name: Scrivi feeds.conf
   ansible.builtin.shell: |
@@ -28,6 +47,20 @@
     chdir: "{{ openwrt_src_dir }}"
   changed_when: true
 
+# Sovrascrive file dei feed con le versioni in files/feed-overrides/<feed>/...
+# (stessa struttura di feeds/). Oggi: net/uspot del feed 'packages', pinnato al
+# commit upstream 87080bfa che corregge il typo di sintassi in uspot.uc (il pin
+# del feed 'packages' di v25.12.5 porta 913980c0, daemon in crash-loop).
+# Si modifica il pacchetto al suo posto invece di affiancargli un feed con lo
+# stesso nome: con il feed duplicato le build #18/#19 hanno comunque prodotto
+# immagini con 913980c0 (vedi controllo in ib_seed.yml).
+- name: Applica gli override ai feed
+  ansible.builtin.copy:
+    src: "feed-overrides/"
+    dest: "{{ openwrt_src_dir }}/feeds/"
+    mode: preserve
+  changed_when: true
+
 - name: Install feeds
   ansible.builtin.command:
     cmd: ./scripts/feeds install -a -f
@@ -39,15 +72,3 @@
     path: "{{ openwrt_src_dir }}/{{ item }}"
     state: absent
   loop: "{{ openwrt_remove_packages }}"
-
-# 'scripts/feeds install -a' su due feed con lo stesso nome pacchetto (qui:
-# 'packages' e il nostro feed locale 'uspot', entrambi definiscono 'uspot')
-# installa solo il primo che trova ed ignora silenziosamente l'altro; la
-# preferenza '-p' non ha effetto su un pacchetto gia' installato da un altro
-# feed. Va quindi reinstallato ESPLICITAMENTE dal nostro feed, dopo aver
-# rimosso sopra il duplicato di 'packages/net/uspot'.
-- name: Reinstalla uspot dal feed locale (dopo rimozione del duplicato in packages)
-  ansible.builtin.command:
-    cmd: ./scripts/feeds install -p uspot -f uspot uspot-www uspotfilter
-    chdir: "{{ openwrt_src_dir }}"
-  changed_when: true
