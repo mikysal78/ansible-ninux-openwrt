@@ -1,2 +1,6 @@
 # Estensione ZeroTier VPN
 CONFIG_PACKAGE_zerotier=y
+
+# Watchcat: se l'hub ZeroTier non risponde lancia /root/restart-zerotier.sh
+# (riavvio interfaccia, poi del servizio). Solo nelle varianti con ZeroTier.
+CONFIG_PACKAGE_watchcat=y

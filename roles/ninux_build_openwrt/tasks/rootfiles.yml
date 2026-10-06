@@ -137,6 +137,18 @@
     state: absent
   when: _vpn not in ['ZeroTier', 'Dual']
 
+# watchcat sta in zerotier.ext: senza ZeroTier il pacchetto non c'e' e config,
+# script e migrazione sarebbero file orfani.
+- name: Rimuovi watchcat e script di recovery (VPN senza ZeroTier)
+  ansible.builtin.file:
+    path: "{{ openwrt_src_dir }}/files/{{ item }}"
+    state: absent
+  loop:
+    - etc/config/watchcat
+    - etc/uci-defaults/97-watchcat-zerotier
+    - root/restart-zerotier.sh
+  when: _vpn not in ['ZeroTier', 'Dual']
+
 # -----------------------------------------------------------------------------
 # Traccia il contenuto: e' l'unico punto in cui si vede cosa finira' davvero
 # nel firmware di QUESTA variante.

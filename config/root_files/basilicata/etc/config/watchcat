@@ -6,3 +6,6 @@ config watchcat
 	option addressfamily 'ipv4'
 	option pingperiod '30s'
 	option pingsize 'standard'
+	# Ping forzato dal device ZeroTier: senza, con ZeroTier giu' Babel
+	# instrada 10.27.255.0/24 sulla mesh e l'hub risponde lo stesso.
+	option interface 'owzt07dbf0'

@@ -483,7 +483,7 @@ Cosa contiene e cosa va adattato:
 |------|--------------|
 | `etc/uci-defaults/99-hostname` | Prefisso hostname dei nodi |
 | `etc/uci-defaults/99-dnsmasq`  | DNS della mesh e whitelist DNS-rebind (aggiungi i domini dell'org: senza, il controller OpenWISP non si risolve se punta a IP privati) |
-| `etc/config/watchcat`          | Riavvio automatico su perdita connettività |
+| `etc/config/watchcat`          | Recovery ZeroTier: se l'hub non risponde (ping forzato dal device ZeroTier) `/root/restart-zerotier.sh` riavvia l'interfaccia, poi il servizio (solo build con VPN ZeroTier/Dual) |
 | `etc/config/zerotier`          | Config ZeroTier (solo build con VPN ZeroTier/Dual) |
 | `etc/config/openwisp`          | **Non toccare**: se l'org è in `openwisp_orgs` viene rigenerato dalla build |
 

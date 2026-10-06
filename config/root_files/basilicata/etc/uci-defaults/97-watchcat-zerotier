@@ -1,0 +1,13 @@
+#!/bin/sh
+# Allinea /etc/config/watchcat conservato dal sysupgrade a quello del firmware:
+# hub ZeroTier 10.27.255.1 (prima 172.27.253.1, irraggiungibile) e ping
+# forzato dal device ZeroTier.
+uci -q get watchcat.@watchcat[0] >/dev/null || exit 0
+[ "$(uci -q get watchcat.@watchcat[0].pinghosts)" = "172.27.253.1" ] && \
+	uci set watchcat.@watchcat[0].pinghosts='10.27.255.1'
+[ -z "$(uci -q get watchcat.@watchcat[0].interface)" ] && \
+	uci set watchcat.@watchcat[0].interface='owzt07dbf0'
+uci set watchcat.@watchcat[0].mode='run_script'
+uci set watchcat.@watchcat[0].script='/root/restart-zerotier.sh'
+uci commit watchcat
+exit 0
