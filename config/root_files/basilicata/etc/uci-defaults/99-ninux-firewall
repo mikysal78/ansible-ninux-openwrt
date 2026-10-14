@@ -1,8 +1,8 @@
 #!/bin/sh
 # Zona firewall "ninux" per le interfacce gestite da OpenWISP (management + mesh).
 #
-# I file in /etc/uci-defaults/ vengono eseguiti UNA VOLTA al primo boot e poi
-# rimossi (se ritornano 0).
+# I file in /etc/uci-defaults/ girano al primo boot E DOPO OGNI SYSUPGRADE che
+# conserva la configurazione (poi vengono rimossi, se ritornano 0).
 #
 # Perche' serve: ZeroTier (owzt0d3e97, management + mesh Babel) e mesh
 # (br-mesh, 802.11s) le crea OpenWISP/uci DOPO il primo boot; senza una zona che
@@ -14,6 +14,14 @@
 # Zona completamente aperta (input/output/forward ACCEPT) con forwarding
 # bidirezionale verso la lan, cosi' anche i client degli AP entrano nel mesh.
 # Named-section idempotente: rieseguire lo script non duplica nulla.
+
+# Solo su un'installazione nuova: se esistono gia' le zone 'VPN'/'mesh' che crea
+# il post-reload-hook del template OpenWISP Bird, il router e' gia' configurato.
+# Ricreare 'ninux' a ogni sysupgrade metteva 'mesh' in due zone finche' il hook
+# non la toglieva al primo apply.
+for s in $(uci -q show firewall | sed -n 's/^firewall\.\([^.=]*\)=zone$/\1/p'); do
+	case "$(uci -q get "firewall.$s.name")" in VPN|mesh) exit 0 ;; esac
+done
 
 uci -q batch <<'EOF'
 set firewall.ninux=zone

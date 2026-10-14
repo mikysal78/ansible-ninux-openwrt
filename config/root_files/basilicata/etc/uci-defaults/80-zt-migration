@@ -1,0 +1,31 @@
+#!/bin/sh
+# Override Ninux di /etc/uci-defaults/80-zt-migration del pacchetto zerotier
+# (stesso nome: nell'immagine questo file prende il posto di quello del
+# pacchetto). L'originale converte ogni rete di zerotier.global.join in una
+# NUOVA sezione 'network' senza controllare se esiste gia'. Gli uci-defaults
+# girano a ogni sysupgrade e OpenWISP rimette 'join' a ogni apply, quindi ogni
+# aggiornamento firmware aggiungeva un doppione (openwisp-config lo rinomina
+# networkN): fino a 3 per router a ottobre 2026. Qui la sezione si aggiunge
+# solo se nessuna 'network' ha gia' quell'id; il resto e' come l'originale.
+nets=$(uci -q get zerotier.@zerotier[0].join)
+[ -n "$nets" ] || exit 0
+
+for net in $nets; do
+	found=0
+	for s in $(uci -q show zerotier | sed -n 's/^zerotier\.\([^.=]*\)=network$/\1/p'); do
+		[ "$(uci -q get "zerotier.$s.id")" = "$net" ] && { found=1; break; }
+	done
+	[ "$found" = 1 ] && continue
+	sid=$(uci add zerotier network)
+	uci set "zerotier.$sid.id=$net"
+done
+uci delete zerotier.@zerotier[0].join
+
+# Rename local conf (only if defined)
+uci -q rename zerotier.@zerotier[0].local_conf='local_conf_path' || true
+
+# Rename configuration to global
+uci rename zerotier.@zerotier[0]='global'
+
+uci commit zerotier
+exit 0
