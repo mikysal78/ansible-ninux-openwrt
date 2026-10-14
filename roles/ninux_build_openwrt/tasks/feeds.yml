@@ -72,3 +72,19 @@
     path: "{{ openwrt_src_dir }}/{{ item }}"
     state: absent
   loop: "{{ openwrt_remove_packages }}"
+
+# Pacchetti Ninux che non stanno in nessun feed (files/packages/<nome>/): vanno
+# nel tree di OpenWrt, che il build system scansiona da solo. Non come override
+# di un feed: 'feeds install' vede solo i pacchetti indicizzati da 'feeds
+# update', quindi un pacchetto NUOVO copiato in feeds/ verrebbe ignorato.
+# Oggi: kmod-wdat-wdt (watchdog ACPI WDAT per il router x86 Gemini Lake).
+- name: Rimuovi i pacchetti Ninux della build precedente
+  ansible.builtin.file:
+    path: "{{ openwrt_src_dir }}/package/ninux"
+    state: absent
+
+- name: Copia i pacchetti Ninux nel tree di OpenWrt
+  ansible.builtin.copy:
+    src: "packages/"
+    dest: "{{ openwrt_src_dir }}/package/ninux/"
+    mode: preserve
