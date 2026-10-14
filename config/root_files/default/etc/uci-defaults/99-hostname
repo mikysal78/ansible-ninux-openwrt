@@ -1,4 +1,11 @@
 #!/bin/sh
+# Nome di default solo su un'installazione NUOVA (hostname ancora 'OpenWrt').
+# Gli uci-defaults dell'immagine girano anche dopo ogni sysupgrade che conserva
+# la configurazione: senza questo controllo ogni aggiornamento rinominava il
+# router in 'Openwrt-Ninux' (successo a ReginaMargherita116 il 14/10/2026) e
+# openwisp-config non lo ricorregge, perche' la sua copia della config remota
+# non e' cambiata.
+[ "$(uci -q get system.@system[0].hostname)" = "OpenWrt" ] || exit 0
 
 uci set system.@system[0].hostname='Openwrt-Ninux'
 uci commit system
