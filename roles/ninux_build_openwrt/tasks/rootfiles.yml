@@ -94,7 +94,12 @@
   when: _openwisp_enabled | bool
   vars:
     _openwisp_controller_url: "{{ openwisp_orgs[openwrt_org].controller_url }}"
-    _openwisp_management_interface: "{{ openwisp_orgs[openwrt_org].management_interface }}"
+    # Senza VPN l'interfaccia di ninux.yml (ZeroTier) non esiste: openwisp-config
+    # non trova l'IP di gestione e OpenWISP non monitora ne' aggiorna il device
+    # (C2600/WRT3200ACM, ottobre 2026). br-lan va bene per gli AP; i router con
+    # uplink su 'wan' lo ricevono come config del device da OpenWISP.
+    _openwisp_management_interface: >-
+      {{ 'br-lan' if _vpn == 'NONE' else openwisp_orgs[openwrt_org].management_interface }}
     _openwisp_shared_secret: "{{ openwisp_orgs[openwrt_org].shared_secret }}"
 
 # root_files/<org>/ puo' contenerne una copia committata nel repo (e' il caso

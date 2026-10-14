@@ -61,9 +61,17 @@
       oppure verifica che openwisp_org_slug='{{ openwisp_org_slug }}' esista.
 
 # ---- 3. Cerca o crea Category ------------------------------------
+# Una category per VARIANTE (target + captive portal + VPN), non per target:
+# l'upgrader propone/applica le build della category del device, e con le 4
+# varianti nella stessa category un upgrade dava l'ultima caricata (US-VPN-NO)
+# anche ai router che hanno bisogno di ZeroTier (C2600 e WRT3200ACM persi il
+# 06/10/2026). Stessa nomenclatura delle cartelle di output.
 - name: "[OpenWISP] Calcola nome category"
   ansible.builtin.set_fact:
-    _ow_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"
+    _ow_category_name: >-
+      Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }} -
+      {{ ('CaptivePortal-' ~ openwrt_cp_engine) if openwrt_captive_portal | bool else 'Standard' }}
+      VPN-{{ _vpn }}
 
 - name: "[OpenWISP] Cerca category esistente"
   ansible.builtin.uri:

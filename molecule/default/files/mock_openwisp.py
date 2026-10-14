@@ -209,13 +209,19 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def seed(org_id, target, versions):
-    """Popola il controller finto come se ci fossero gia' delle compilazioni."""
-    category = {
-        "id": _new_id(),
-        "name": f"Ninux Basilicata - {target}",
-        "organization": org_id,
-    }
-    STATE["categories"].append(category)
+    """Popola il controller finto come se ci fossero gia' delle compilazioni.
+
+    Una category per variante, come le crea il ruolo (openwisp_upload.yml).
+    """
+    categories = {}
+    for suffix, variant in (("VPN-NO", "Standard VPN-NONE"),
+                            ("US-VPN-WG", "CaptivePortal-uspot VPN-WireGuard")):
+        categories[suffix] = {
+            "id": _new_id(),
+            "name": f"Ninux Basilicata - {target} - {variant}",
+            "organization": org_id,
+        }
+        STATE["categories"].append(categories[suffix])
 
     base = datetime.now(timezone.utc) - timedelta(days=365)
     for index, version in enumerate(versions):
@@ -223,7 +229,7 @@ def seed(org_id, target, versions):
             STATE["builds"].append(
                 {
                     "id": _new_id(),
-                    "category": category["id"],
+                    "category": categories[suffix]["id"],
                     "version": f"{version}-{target[:12]}-{suffix}",
                     "changelog": "build preesistente (seed del test)",
                     "created": (base + timedelta(days=index)).isoformat(),

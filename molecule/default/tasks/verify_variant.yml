@@ -66,8 +66,12 @@
     that:
       - t_openwisp_orgs[t_org].controller_url in (_openwisp_cfg.content | b64decode)
       - t_openwisp_orgs[t_org].shared_secret in (_openwisp_cfg.content | b64decode)
-      - t_openwisp_orgs[t_org].management_interface in (_openwisp_cfg.content | b64decode)
-    fail_msg: "/etc/config/openwisp non contiene url, secret o interfaccia di management"
+      - ("option management_interface '" ~ _mgmt_expected ~ "'") in (_openwisp_cfg.content | b64decode)
+    fail_msg: "/etc/config/openwisp non contiene url, secret o interfaccia di management ({{ _mgmt_expected }})"
+  vars:
+    # Senza VPN l'interfaccia di ninux.yml (ZeroTier) non esiste: il ruolo usa br-lan
+    _mgmt_expected: >-
+      {{ 'br-lan' if variant.key.startswith('VPN-NONE_') else t_openwisp_orgs[t_org].management_interface }}
 
 - name: "[{{ variant.key }}] Leggi feeds.conf"
   ansible.builtin.slurp:
