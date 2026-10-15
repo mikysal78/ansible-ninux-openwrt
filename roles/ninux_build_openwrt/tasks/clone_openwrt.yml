@@ -39,3 +39,21 @@
     cmd: "git checkout -f {{ openwrt_version }}"
     chdir: "{{ openwrt_src_dir }}"
   changed_when: true
+
+# File aggiunti al sorgente di OpenWrt (files/openwrt-overrides/, stessa
+# struttura del tree). Oggi: patch di mwlwifi che abilita la mesh 802.11s
+# sull'88W8964 (WRT3200ACM), rifiutata dal driver con -EPERM. 'checkout -f'
+# non toglie i file non tracciati: la pulizia evita che una patch tolta dal
+# repo resti nel tree di Jenkins.
+- name: Togli i file aggiunti dalle build precedenti in package/kernel
+  ansible.builtin.command:
+    cmd: git clean -fdq -- package/kernel
+    chdir: "{{ openwrt_src_dir }}"
+  changed_when: true
+
+- name: Applica gli override al sorgente di OpenWrt
+  ansible.builtin.copy:
+    src: "openwrt-overrides/"
+    dest: "{{ openwrt_src_dir }}/"
+    mode: preserve
+  changed_when: true

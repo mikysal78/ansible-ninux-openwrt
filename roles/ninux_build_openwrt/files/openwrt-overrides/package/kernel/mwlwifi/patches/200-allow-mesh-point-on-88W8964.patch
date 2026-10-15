@@ -1,0 +1,24 @@
+From: Michele Salerno <mikysal78@gmail.com>
+Subject: [PATCH] mwlwifi: allow 802.11s mesh point on 88W8964
+
+Mesh support was added and verified only on 88W8997 (commit 9271457) and
+add_interface returns -EPERM for every other chip, although
+interface_modes advertises NL80211_IFTYPE_MESH_POINT unconditionally.
+Beacons and mesh IEs are already handled by the common AP code path, so
+let 88W8964 (WRT3200ACM/WRT32X) try it.
+
+EXPERIMENTAL: 88W8964 uses the NDP data path, where the firmware rebuilds
+the 802.11 header of data frames; mesh data frames may not be handled.
+
+--- a/mac80211.c
++++ b/mac80211.c
+@@ -190,7 +190,8 @@ static int mwl_mac80211_add_interface(st
+ 	case NL80211_IFTYPE_AP:
+ 	case NL80211_IFTYPE_MESH_POINT:
+ 		if (vif->type == NL80211_IFTYPE_MESH_POINT)
+-			if (priv->chip_type != MWL8997)
++			if (priv->chip_type != MWL8997 &&
++			    priv->chip_type != MWL8964)
+ 				return -EPERM;
+ 		macids_supported = priv->ap_macids_supported;
+ 		break;
