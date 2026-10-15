@@ -119,6 +119,10 @@ class Handler(BaseHTTPRequestHandler):
 
         if path == f"{API}/category/":
             payload = json.loads(raw or b"{}")
+            # Come il controller vero: name e' un CharField(max_length=64).
+            if len(payload["name"]) > 64:
+                self._reply(400, {"name": ["Ensure this field has no more than 64 characters."]})
+                return
             category = {
                 "id": _new_id(),
                 "name": payload["name"],
@@ -215,10 +219,10 @@ def seed(org_id, target, versions):
     """
     categories = {}
     for suffix, variant in (("VPN-NO", "Standard VPN-NONE"),
-                            ("US-VPN-WG", "CaptivePortal-uspot VPN-WireGuard")):
+                            ("US-VPN-WG", "uspot VPN-WireGuard")):
         categories[suffix] = {
             "id": _new_id(),
-            "name": f"Ninux Basilicata - {target} - {variant}",
+            "name": f"Basilicata - {target} - {variant}",
             "organization": org_id,
         }
         STATE["categories"].append(categories[suffix])

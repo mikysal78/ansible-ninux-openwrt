@@ -177,9 +177,6 @@ openwisp_org_slug: "basilicata"
 #   'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx' --name 'openwisp_org_id'
 openwisp_org_id: "3a6e98ba-c021-41eb-be44-65a8130e6aec"
 
-# Nome della category firmware in OpenWISP
-openwisp_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"
-
 # Un upload fallito (controller giu' o irraggiungibile) NON fa fallire la build:
 # il firmware viene comunque archiviato e pubblicato, la variante non caricata
 # finisce in output/.openwisp-upload-failed e Jenkins marca la build UNSTABLE.

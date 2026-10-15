@@ -116,7 +116,6 @@ openwisp_username: ""
 openwisp_password: ""
 openwisp_org_slug: "{{ openwrt_org }}"
 openwisp_org_id: ""
-openwisp_category_name: "Ninux {{ openwrt_org | capitalize }} - {{ openwrt_target }}"
 # Se l'upload fallisce (controller giu'/irraggiungibile) la build NON fallisce:
 # il firmware resta compilato e archiviato, e la variante viene annotata in
 # output/.openwisp-upload-failed (Jenkins la legge e marca la build UNSTABLE).
