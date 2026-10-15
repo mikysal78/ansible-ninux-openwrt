@@ -84,14 +84,25 @@
       ('{{ _ow_category_name }}'): OpenWISP ne accetta al massimo 64.
     quiet: true
 
+# L'API e' paginata (10 per pagina di default, massimo 100, ordinate per nome
+# decrescente): leggendo solo la prima pagina, con 24 category la build #28 non
+# trovava quelle esistenti e il POST falliva per nome duplicato.
 - name: "[OpenWISP] Cerca category esistente"
   ansible.builtin.uri:
-    url: "{{ openwisp_url }}/api/v1/firmware-upgrader/category/"
+    url: "{{ openwisp_url }}/api/v1/firmware-upgrader/category/?page_size=100"
     method: GET
     headers:
       Authorization: "Bearer {{ _ow_token }}"
     status_code: 200
   register: _ow_categories
+
+- name: "[OpenWISP] Tutte le category in una pagina"
+  ansible.builtin.assert:
+    that: _ow_categories.json.next is none
+    fail_msg: >-
+      Oltre 100 category in OpenWISP ({{ _ow_categories.json.count }}): la
+      ricerca per nome leggerebbe solo la prima pagina.
+    quiet: true
 
 - name: "[OpenWISP] Filtra category per nome e org"
   ansible.builtin.set_fact:
@@ -158,7 +169,7 @@
 
 - name: "[OpenWISP] Cerca build esistente"
   ansible.builtin.uri:
-    url: "{{ openwisp_url }}/api/v1/firmware-upgrader/build/?category={{ _ow_category_id }}"
+    url: "{{ openwisp_url }}/api/v1/firmware-upgrader/build/?category={{ _ow_category_id }}&page_size=100"
     method: GET
     headers:
       Authorization: "Bearer {{ _ow_token }}"
@@ -302,7 +313,7 @@
 # cancellerebbe varianti VPN/CP della stessa compilazione.
 - name: "[OpenWISP] Rileggi le build della category (retention)"
   ansible.builtin.uri:
-    url: "{{ openwisp_url }}/api/v1/firmware-upgrader/build/?category={{ _ow_category_id }}&page_size=1000"
+    url: "{{ openwisp_url }}/api/v1/firmware-upgrader/build/?category={{ _ow_category_id }}&page_size=100"
     method: GET
     headers:
       Authorization: "Bearer {{ _ow_token }}"

@@ -57,6 +57,21 @@ def _build_version(item_id):
     return build["version"] if build else None
 
 
+def _page(results, query):
+    """Paginazione come OpenWispPagination: 10 di default, page_size fino a 100."""
+    params = dict(p.split("=", 1) for p in query.split("&") if "=" in p)
+    size = min(int(params.get("page_size", 10)), 100)
+    page = int(params.get("page", 1))
+    chunk = results[(page - 1) * size:page * size]
+    more = page * size < len(results)
+    return {
+        "count": len(results),
+        "next": f"?page={page + 1}&page_size={size}" if more else None,
+        "previous": None if page == 1 else f"?page={page - 1}&page_size={size}",
+        "results": chunk,
+    }
+
+
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
 
@@ -86,8 +101,9 @@ class Handler(BaseHTTPRequestHandler):
         query = self.path.split("?")[1] if "?" in self.path else ""
 
         if path == f"{API}/category/":
-            results = STATE["categories"]
-            self._reply(200, {"count": len(results), "results": results})
+            # Ordinamento di CategoryListView: nome decrescente.
+            results = sorted(STATE["categories"], key=lambda c: c["name"], reverse=True)
+            self._reply(200, _page(results, query))
             return
 
         if path == f"{API}/build/":
@@ -99,7 +115,7 @@ class Handler(BaseHTTPRequestHandler):
                 for b in STATE["builds"]
                 if category is None or str(b["category"]) == str(category)
             ]
-            self._reply(200, {"count": len(results), "results": results})
+            self._reply(200, _page(results, query))
             return
 
         if re.fullmatch(rf"{API}/build/\d+/upgrade/", path):
@@ -122,6 +138,12 @@ class Handler(BaseHTTPRequestHandler):
             # Come il controller vero: name e' un CharField(max_length=64).
             if len(payload["name"]) > 64:
                 self._reply(400, {"name": ["Ensure this field has no more than 64 characters."]})
+                return
+            # unique_together (name, organization), come il modello vero.
+            if any(c["name"] == payload["name"] and c["organization"] == payload["organization"]
+                   for c in STATE["categories"]):
+                self._reply(400, {"non_field_errors": [
+                    "The fields name, organization must make a unique set."]})
                 return
             category = {
                 "id": _new_id(),
@@ -226,6 +248,16 @@ def seed(org_id, target, versions):
             "organization": org_id,
         }
         STATE["categories"].append(categories[suffix])
+
+    # Altre category della stessa org, che in ordine di nome decrescente vengono
+    # prima: quelle del target finiscono oltre la prima pagina (default 10),
+    # come in produzione con 24 varianti (build #28).
+    for index in range(12):
+        STATE["categories"].append({
+            "id": _new_id(),
+            "name": f"Basilicata - zz_altro_target_{index:02d} - Standard VPN-NONE",
+            "organization": org_id,
+        })
 
     base = datetime.now(timezone.utc) - timedelta(days=365)
     for index, version in enumerate(versions):
