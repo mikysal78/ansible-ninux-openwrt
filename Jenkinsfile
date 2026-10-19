@@ -9,7 +9,7 @@ pipeline {
         )
         string(
             name: 'OPENWRT_VERSION',
-            defaultValue: 'v25.12.5',
+            defaultValue: 'v25.12.6',
             description: 'Tag OpenWrt'
         )
         string(

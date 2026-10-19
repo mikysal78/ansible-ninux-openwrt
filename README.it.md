@@ -279,7 +279,7 @@ Pipeline e Git sono già inclusi nei plugin suggeriti.
 | Parametro | Default | Descrizione |
 |-----------|---------|-------------|
 | `OPENWRT_ORG` | `default` | Organizzazione Ninux |
-| `OPENWRT_VERSION` | `v25.12.5` | Tag OpenWrt |
+| `OPENWRT_VERSION` | `v25.12.6` | Tag OpenWrt |
 | `VPN_VARIANTS` | `ALL` | `ALL` / `NONE` / `ZeroTier` / `WireGuard` / `Dual` |
 | `CAPTIVE_PORTAL_VARIANTS` | true | Compila anche varianti con CP (come `openwrt_cp_variants` in ninux.yml) |
 | `CAPTIVE_PORTAL_ENGINE` | `config` | Motore CP: `config` usa ninux.yml (con eventuali override per org), `uspot` lo forza. Unico motore disponibile |
@@ -316,7 +316,7 @@ Sezioni principali:
 
 ```yaml
 # Versione e org
-openwrt_version: "v25.12.5"
+openwrt_version: "v25.12.6"
 openwrt_org: "default"
 
 # Varianti da compilare
