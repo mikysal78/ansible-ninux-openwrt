@@ -416,7 +416,10 @@ leaves the password chosen on the router.
 
 In the same way `openwrt_admin_password` creates the `admin` user with UID 0
 (same rights as root, SSH and LuCI access through a `login` section in
-`/etc/config/rpcd`), with this password unless it already has one:
+`/etc/config/rpcd`), with this password unless it already has one.
+
+Default `admin` password in the NINUX firmware: **`ninux:2026`**, to be
+changed after the first login (`passwd admin` or from LuCI). To create it:
 
 ```bash
 ansible-vault encrypt_string --encrypt-vault-id default \
