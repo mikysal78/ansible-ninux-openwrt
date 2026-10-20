@@ -414,12 +414,14 @@ before. It is applied only if root has no password yet (first flash from the
 stock firmware or after a reset): an upgrade that keeps the configuration
 leaves the password chosen on the router.
 
-In the same way `openwrt_admin_password` creates the `admin` user with UID 0
-(same rights as root, SSH and LuCI access through a `login` section in
-`/etc/config/rpcd`), with this password unless it already has one.
+Default `root` password in the NINUX firmware: **`ninux:2026`**, to be
+changed after the first login (LuCI → System → Administration, or `passwd`).
 
-Default `admin` password in the NINUX firmware: **`ninux:2026`**, to be
-changed after the first login (`passwd admin` or from LuCI). To create it:
+`openwrt_admin_password` instead creates the `admin` user with UID 0, the
+NINUX service account (same rights as root, SSH and LuCI access through a
+`login` section in `/etc/config/rpcd`). Its password **is reset at every
+flash**, so it always stays the NINUX one even if changed on the router. To
+create it:
 
 ```bash
 ansible-vault encrypt_string --encrypt-vault-id default \

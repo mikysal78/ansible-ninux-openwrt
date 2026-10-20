@@ -113,8 +113,8 @@ openwrt_build_deps:
 # vedi openwrt_root_password in ninux.yml (cifrata con ansible-vault).
 openwrt_root_password: ""
 
-# Utente "admin" con UID 0 (SSH e LuCI), creato al primo avvio se manca, con
-# questa password se non ne ha gia' una. Vuota = utente non creato: vedi
+# Utente "admin" con UID 0 (accesso di servizio, SSH e LuCI), creato se manca;
+# la password si reimposta a ogni flash. Vuota = utente non creato: vedi
 # openwrt_admin_password in ninux.yml (cifrata con ansible-vault).
 openwrt_admin_password: ""
 
