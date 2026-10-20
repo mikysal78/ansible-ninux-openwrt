@@ -414,6 +414,15 @@ before. It is applied only if root has no password yet (first flash from the
 stock firmware or after a reset): an upgrade that keeps the configuration
 leaves the password chosen on the router.
 
+In the same way `openwrt_admin_password` creates the `admin` user with UID 0
+(same rights as root, SSH and LuCI access through a `login` section in
+`/etc/config/rpcd`), with this password unless it already has one:
+
+```bash
+ansible-vault encrypt_string --encrypt-vault-id default \
+  'THE_ADMIN_PASSWORD' --name 'openwrt_admin_password'
+```
+
 ```bash
 ansible-vault encrypt_string \
   --vault-password-file /var/lib/jenkins/.vault_pass \
