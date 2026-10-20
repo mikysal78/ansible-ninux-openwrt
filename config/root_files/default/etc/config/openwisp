@@ -1,7 +1,7 @@
 # /etc/config/openwisp
 # ESEMPIO — org 'default': valori placeholder, il nodo NON si registra.
 # Sostituisci url, shared_secret e management_interface con i dati reali
-# della tua organizzazione, poi: /etc/init.d/openwisp_config restart
+# della tua organizzazione, poi: /etc/init.d/openwisp-config restart
 #
 # Se l'org viene configurata in ninux.yml (openwisp_orgs), questo file
 # viene rigenerato automaticamente dalla build e sovrascritto.

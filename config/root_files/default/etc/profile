@@ -29,4 +29,4 @@ alias ll="ls -alF"
 
 alias netjsongraphv4="echo /netjsoninfo filter graph ipv4_0 | nc 127.0.0.1 2009"
 alias netjsongraphv6="echo /netjsoninfo filter graph ipv6_0 | nc 127.0.0.1 2009"
-alias restart-openwisp="rm /tmp/openwisp/checksum; /etc/init.d/openwisp_config restart; logread -f"
+alias restart-openwisp="rm /tmp/openwisp/checksum; /etc/init.d/openwisp-config restart; logread -f"
