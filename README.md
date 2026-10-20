@@ -410,7 +410,9 @@ ansible-vault encrypt_string \
 
 Set in the firmware as a hash in `/etc/shadow` (never the plaintext
 password), applies to all orgs. Empty/absent = no password is set, same as
-before.
+before. It is applied only if root has no password yet (first flash from the
+stock firmware or after a reset): an upgrade that keeps the configuration
+leaves the password chosen on the router.
 
 ```bash
 ansible-vault encrypt_string \

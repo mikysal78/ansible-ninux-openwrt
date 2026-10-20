@@ -409,6 +409,9 @@ ansible-vault encrypt_string \
 
 Impostata nel firmware come hash in `/etc/shadow` (mai la password in chiaro),
 vale per tutte le org. Vuota/assente = nessuna password impostata, come prima.
+Viene applicata solo se root non ha già una password (primo flash da firmware
+originale o dopo un reset): un aggiornamento che conserva la configurazione
+lascia la password scelta sul router.
 
 ```bash
 ansible-vault encrypt_string \
