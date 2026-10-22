@@ -39,3 +39,22 @@
     cmd: "git checkout -f {{ openwrt_version }}"
     chdir: "{{ openwrt_src_dir }}"
   changed_when: true
+
+# netconsole dinamico (configfs): OpenWrt compila kmod-netconsole con
+# CONFIG_NETCONSOLE_DYNAMIC=n. Con =y il target creato dai parametri del modulo
+# compare in /sys/kernel/config/netconsole/cmdline0 e il template OpenWISP
+# «Netconsole» gli aggiunge l'userdata ninux_node (nome del device): il server
+# salva i log per nome invece che per IP. Il Kconfig vuole CONFIGFS_FS, da qui
+# la dipendenza da kmod-fs-configfs. Il checkout -f sopra riporta il file
+# all'originale a ogni build, quindi la modifica si riapplica sempre.
+- name: "Netconsole: abilita NETCONSOLE_DYNAMIC in kmod-netconsole"
+  ansible.builtin.replace:
+    path: "{{ openwrt_src_dir }}/package/kernel/linux/modules/netsupport.mk"
+    regexp: '(TITLE:=Network console logging support\n)(  KCONFIG:=CONFIG_NETCONSOLE \\\n\s*)CONFIG_NETCONSOLE_DYNAMIC=n'
+    replace: '\1  DEPENDS:=+kmod-fs-configfs\n\2CONFIG_NETCONSOLE_DYNAMIC=y'
+
+- name: "Netconsole: verifica che la modifica sia applicata"
+  ansible.builtin.command:
+    cmd: grep -q 'CONFIG_NETCONSOLE_DYNAMIC=y' package/kernel/linux/modules/netsupport.mk
+    chdir: "{{ openwrt_src_dir }}"
+  changed_when: false

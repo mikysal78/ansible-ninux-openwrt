@@ -128,6 +128,16 @@
           Errore make: {{ _ib_seed_result.stderr | default('') | truncate(500) }}
       when: _ib_tarball.files | length == 0
 
+    # kconfig scarta in silenzio un simbolo con le dipendenze non soddisfatte:
+    # la modifica di clone_openwrt.yml va verificata sul .config del kernel.
+    - name: "[IB seed] Verifica NETCONSOLE_DYNAMIC nel kernel compilato"
+      ansible.builtin.shell: >-
+        grep -qx 'CONFIG_NETCONSOLE_DYNAMIC=y'
+        build_dir/target-*/linux-*/linux-*/.config
+      args:
+        chdir: "{{ openwrt_src_dir }}"
+      changed_when: false
+
     - name: "[IB seed] Prepara la directory di cache"
       ansible.builtin.file:
         path: "{{ _ib_cache_dir }}/imagebuilder"
