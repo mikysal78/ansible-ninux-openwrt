@@ -64,10 +64,25 @@
 # OpenWrt. Il checkout -f sopra non tocca i file non tracciati, ma la copia si
 # ripete a ogni build. WRT3200ACM: i LED wlan_2g/wlan_5g del device tree sono
 # in realta' i reset PCIe delle schede wifi (accendere il LED = radio morta).
+- name: Cerca le patch del kernel per target
+  ansible.builtin.find:
+    paths: "{{ role_path }}/files/kernel-patches"
+    patterns: "*.patch"
+    recurse: true
+  register: _kernel_patches
+
+# with_fileglob non espande le directory (kernel-patches/*/): la build #39 ha
+# saltato la patch senza errori, quindi ora una lista vuota ferma la build
+- name: Verifica che ci siano patch del kernel
+  ansible.builtin.assert:
+    that: _kernel_patches.matched > 0
+    fail_msg: "Nessuna patch in {{ role_path }}/files/kernel-patches"
+
 - name: Patch del kernel per target
   ansible.builtin.copy:
-    src: "{{ item }}"
-    dest: "{{ openwrt_src_dir }}/target/linux/{{ item | dirname | basename }}/patches-6.12/"
+    src: "{{ item.path }}"
+    dest: "{{ openwrt_src_dir }}/target/linux/{{ item.path | dirname | basename }}/patches-6.12/"
     mode: "0644"
-  with_fileglob:
-    - "kernel-patches/*/*.patch"
+  loop: "{{ _kernel_patches.files }}"
+  loop_control:
+    label: "{{ item.path | dirname | basename }}/{{ item.path | basename }}"

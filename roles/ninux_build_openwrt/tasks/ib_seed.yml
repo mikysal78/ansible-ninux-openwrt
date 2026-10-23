@@ -138,6 +138,17 @@
         chdir: "{{ openwrt_src_dir }}"
       changed_when: false
 
+    # Patch del device tree del WRT3200ACM (files/kernel-patches/mvebu): nel
+    # sorgente patchato del kernel i LED wlan non devono esserci piu' e i due
+    # pin devono essere i reset PCIe. Sugli altri target il file non c'e'.
+    - name: "[IB seed] Verifica la patch del device tree del WRT3200ACM"
+      ansible.builtin.shell: >-
+        f=$(ls build_dir/target-*/linux-mvebu_*/linux-*/arch/arm/boot/dts/marvell/armada-385-linksys-rango.dts 2>/dev/null);
+        [ -z "$f" ] || { grep -q 'reset-gpios = <&gpio1 13' $f && ! grep -q 'wlan_2g' $f; }
+      args:
+        chdir: "{{ openwrt_src_dir }}"
+      changed_when: false
+
     - name: "[IB seed] Prepara la directory di cache"
       ansible.builtin.file:
         path: "{{ _ib_cache_dir }}/imagebuilder"
