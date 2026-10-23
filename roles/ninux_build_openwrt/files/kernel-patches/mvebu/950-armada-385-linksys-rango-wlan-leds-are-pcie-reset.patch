@@ -1,0 +1,45 @@
+From: Michele Salerno <mikysal78@gmail.com>
+Subject: ARM: dts: armada-385-linksys-rango: wlan LEDs are the wifi PCIe resets
+
+On the WRT3200ACM, gpio1 13 (mpp45) and gpio1 14 (mpp46) are described as
+the "wlan_2g" and "wlan_5g" LEDs, but they hold the 2.4 GHz and 5 GHz
+88W8964 cards in reset when driven low: with a LED trigger (netdev,
+phyXradio) the card disappears from the bus (config space reads
+0xffffffff) and mwlwifi logs "adapter does not exist", "buffer is NULL for
+tx done ring" and "can't get hw specs" until reboot.
+
+Drop the two LEDs and keep the lines deasserted with a GPIO hog.
+
+See https://github.com/openwrt/openwrt/issues/9517
+---
+--- a/arch/arm/boot/dts/marvell/armada-385-linksys-rango.dts
++++ b/arch/arm/boot/dts/marvell/armada-385-linksys-rango.dts
+@@ -63,15 +63,20 @@
+ 		gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+ 		label = "rango:white:sata";
+ 	};
++};
+ 
+-	led-wlan_2g {
+-		gpios = <&gpio1 13 GPIO_ACTIVE_LOW>;
+-		label = "rango:white:wlan_2g";
+-	};
+-
+-	led-wlan_5g {
+-		gpios = <&gpio1 14 GPIO_ACTIVE_LOW>;
+-		label = "rango:white:wlan_5g";
++/*
++ * mpp45 and mpp46 are not LEDs: they are the PCIe reset lines of the two
++ * 88W8964 cards (mpp45: 2.4 GHz card, mpp46: 5 GHz card). Driving them low
++ * ("LED on") holds the card in reset and the radio stops working. Keep them
++ * deasserted and reserved.
++ */
++&gpio1 {
++	wifi-pcie-reset-hog {
++		gpio-hog;
++		gpios = <13 GPIO_ACTIVE_LOW>, <14 GPIO_ACTIVE_LOW>;
++		output-low;
++		line-name = "wifi-pcie-reset";
+ 	};
+ };
+ 

@@ -58,3 +58,16 @@
     cmd: grep -q 'CONFIG_NETCONSOLE_DYNAMIC=y' package/kernel/linux/modules/netsupport.mk
     chdir: "{{ openwrt_src_dir }}"
   changed_when: false
+
+# Patch del kernel per target (files/kernel-patches/<target>/): finiscono in
+# target/linux/<target>/patches-6.12 e il kernel le applica dopo quelle di
+# OpenWrt. Il checkout -f sopra non tocca i file non tracciati, ma la copia si
+# ripete a ogni build. WRT3200ACM: i LED wlan_2g/wlan_5g del device tree sono
+# in realta' i reset PCIe delle schede wifi (accendere il LED = radio morta).
+- name: Patch del kernel per target
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ openwrt_src_dir }}/target/linux/{{ item | dirname | basename }}/patches-6.12/"
+    mode: "0644"
+  with_fileglob:
+    - "kernel-patches/*/*.patch"
