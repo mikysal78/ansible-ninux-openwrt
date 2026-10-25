@@ -2,6 +2,8 @@
 
 # ansible-ninux-openwrt
 
+> 📖 Questo repository fa parte dell'infrastruttura di **NINUX Basilicata**: la guida per ricostruirla tutta, passo passo (Proxmox, DNS, OpenWISP, moduli, firmware, app), è su **[docs.ninux-nnxx.it](https://docs.ninux-nnxx.it)**.
+
 [![CI](https://github.com/mikysal78/ansible-ninux-openwrt/actions/workflows/ci.yml/badge.svg)](https://github.com/mikysal78/ansible-ninux-openwrt/actions/workflows/ci.yml)
 
 Sistema di build automatizzato per firmware **OpenWrt** per i nodi della rete mesh [Ninux](http://ninux.org).
