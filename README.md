@@ -2,7 +2,7 @@
 
 # ansible-ninux-openwrt
 
-> 📖 This repository is part of the **NINUX Basilicata** infrastructure: the step-by-step guide to rebuild all of it (Proxmox, DNS, OpenWISP, modules, firmware, app) is at **[the guide on GitHub Pages](https://mikysal78.github.io/ninux-basilicata-infra/en/)**.
+> 📖 This repository is part of the **NINUX Basilicata** infrastructure: the step-by-step guide to rebuild all of it (Proxmox, DNS, OpenWISP, modules, firmware, app) is on **[GitHub Pages](https://mikysal78.github.io/ninux-basilicata-infra/en/)**.
 
 [![CI](https://github.com/mikysal78/ansible-ninux-openwrt/actions/workflows/ci.yml/badge.svg)](https://github.com/mikysal78/ansible-ninux-openwrt/actions/workflows/ci.yml)
 
