@@ -149,6 +149,16 @@
         chdir: "{{ openwrt_src_dir }}"
       changed_when: false
 
+    # Reset PCIe mvebu (clone_openwrt.yml): senza la 801 il driver non
+    # stampa piu' «reset completed in» e attende sempre i 100 ms pieni.
+    - name: "[IB seed] Verifica che la patch 801 del reset PCIe sia tolta"
+      ansible.builtin.shell: >-
+        f=$(ls build_dir/target-*/linux-mvebu_*/linux-*/drivers/pci/controller/pci-mvebu.c 2>/dev/null);
+        [ -z "$f" ] || ! grep -q 'reset completed in' $f
+      args:
+        chdir: "{{ openwrt_src_dir }}"
+      changed_when: false
+
     - name: "[IB seed] Prepara la directory di cache"
       ansible.builtin.file:
         path: "{{ _ib_cache_dir }}/imagebuilder"

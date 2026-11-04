@@ -59,6 +59,19 @@
     chdir: "{{ openwrt_src_dir }}"
   changed_when: false
 
+# mvebu: come openwrt/openwrt#26437 si torna all'attesa piena di 100 ms dopo il
+# reset PCIe (specifica PCIe, upstream 8ed81ec82a8c). Via la 801 di OpenWrt
+# (finiva il reset appena il link risultava su: sul WRT3200ACM la scheda 5GHz
+# spariva) e la nostra 951 che la correggeva; la 951 era una copia non
+# tracciata, che il checkout -f non toglie, quindi va cancellata a mano.
+- name: "mvebu: togli le patch 801 e 951 del reset PCIe"
+  ansible.builtin.file:
+    path: "{{ openwrt_src_dir }}/target/linux/mvebu/patches-6.12/{{ item }}"
+    state: absent
+  loop:
+    - 801-pci-mvebu-time-out-reset-on-link-up.patch
+    - 951-pci-mvebu-wait-for-link-down-in-reset.patch
+
 # Patch del kernel per target (files/kernel-patches/<target>/): finiscono in
 # target/linux/<target>/patches-6.12 e il kernel le applica dopo quelle di
 # OpenWrt. Il checkout -f sopra non tocca i file non tracciati, ma la copia si
