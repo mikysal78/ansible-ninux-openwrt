@@ -965,7 +965,7 @@ e **Dual + uspot**. Le regole verificate sono quelle del progetto:
 
 - i config di captive portal e VPN entrano **solo** nella variante che li usa
   (in passato `/etc/config/chilli` finiva in *tutte* le immagini);
-- nel firmware non ci sono uci-defaults di rete né i pacchetti autoip: mesh e
+- nel firmware non ci sono uci-defaults di rete: mesh e
   portale li configura OpenWISP con i suoi template;
 - sul controller restano **solo le ultime 3 versioni**, e ricompilare la stessa
   versione la **sostituisce** invece di lasciare online il firmware vecchio.

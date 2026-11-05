@@ -5,7 +5,7 @@
 #   - i config del captive portal e della VPN entrano SOLO nella variante che
 #     li usa (in passato /etc/config/chilli finiva in tutte le immagini);
 #   - mesh e portale li configura OpenWISP con i suoi template: nel firmware
-#     non ci sono uci-defaults di rete ne' i pacchetti autoip;
+#     non ci sono uci-defaults di rete;
 #   - sul controller restano solo le ultime 3 versioni, e ricompilare la
 #     stessa versione la sostituisce invece di lasciare online il firmware vecchio.
 
@@ -20,7 +20,7 @@
     t_expected:
       VPN-NONE_CP-nessuno:
         config_yes: ["luci-theme-ninux", "luci-app-package-manager"]
-        config_no: ["luci-theme-bootstrap", "luci-light", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan", "avahi-autoipd"]
+        config_no: ["luci-theme-bootstrap", "luci-light", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan"]
         overlay_yes: ["etc/config/openwisp", "etc/uci-defaults/99-dnsmasq", "etc/uci-defaults/99-hostname"]
         overlay_no:
           - "etc/config/chilli"
@@ -32,8 +32,17 @@
           - "etc/uci-defaults/99-br-cp"
 
       VPN-WireGuard_CP-uspot:
-        config_yes: ["luci-theme-ninux", "luci-app-package-manager", "uspot", "uspot-www", "uspotfilter", "wireguard-tools", "kmod-wireguard", "kmod-vxlan", "vxlan"]
-        config_no: ["luci-theme-bootstrap", "luci-light", "zerotier", "avahi-autoipd"]
+        config_yes:
+          - "luci-theme-ninux"
+          - "luci-app-package-manager"
+          - "uspot"
+          - "uspot-www"
+          - "uspotfilter"
+          - "wireguard-tools"
+          - "kmod-wireguard"
+          - "kmod-vxlan"
+          - "vxlan"
+        config_no: ["luci-theme-bootstrap", "luci-light", "zerotier"]
         overlay_yes: ["etc/config/uspot", "etc/config/openwisp", "etc/uci-defaults/99-dnsmasq"]
         overlay_no:
           - "etc/config/chilli"
@@ -45,7 +54,7 @@
 
       VPN-Dual_CP-uspot:
         config_yes: ["luci-theme-ninux", "luci-app-package-manager", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan"]
-        config_no: ["luci-theme-bootstrap", "luci-light", "avahi-autoipd"]
+        config_no: ["luci-theme-bootstrap", "luci-light"]
         overlay_yes:
           - "etc/config/uspot"
           - "etc/config/zerotier"
@@ -138,12 +147,6 @@
           - _img["v25.12.5-glinet_gl-mt-US-VPN-DV"].zerotier
           - _img["v25.12.5-glinet_gl-mt-US-VPN-DV"].wireguard
         fail_msg: "Il firmware caricato su OpenWISP non contiene i pacchetti della sua variante: {{ _img }}"
-
-    - name: I pacchetti autoip non stanno piu' in nessuna immagine (mesh gestita da OpenWISP)
-      ansible.builtin.assert:
-        that:
-          - _ow.json.images | selectattr('markers.autoip') | list | length == 0
-        fail_msg: "avahi-autoipd e' tornato dentro il firmware: la mesh la configura OpenWISP"
 
     # ---- 3. Controller giu': la build sopravvive -----------------------
     - name: Leggi la segnalazione degli upload falliti

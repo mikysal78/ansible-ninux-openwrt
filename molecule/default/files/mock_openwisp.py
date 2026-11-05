@@ -36,7 +36,6 @@ MARKERS = {
     "zerotier": "CONFIG_PACKAGE_zerotier=y",
     "wireguard": "CONFIG_PACKAGE_wireguard-tools=y",
     "vxlan": "CONFIG_PACKAGE_kmod-vxlan=y",
-    "autoip": "CONFIG_PACKAGE_avahi-autoipd=y",
 }
 
 STATE = {"categories": [], "builds": [], "images": [], "deleted_builds": []}
