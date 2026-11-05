@@ -64,7 +64,7 @@
 # (finiva il reset appena il link risultava su: sul WRT3200ACM la scheda 5GHz
 # spariva) e la nostra 951 che la correggeva; la 951 era una copia non
 # tracciata, che il checkout -f non toglie, quindi va cancellata a mano.
-- name: "mvebu: togli le patch 801 e 951 del reset PCIe"
+- name: "Togli le patch mvebu 801 e 951 del reset PCIe"
   ansible.builtin.file:
     path: "{{ openwrt_src_dir }}/target/linux/mvebu/patches-6.12/{{ item }}"
     state: absent
