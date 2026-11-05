@@ -50,6 +50,27 @@ jobs:
       - name: shellcheck (uci-defaults e script di setup)
         run: shellcheck -S warning config/root_files/*/etc/uci-defaults/* setup/*.sh
 
+      # Jenkins usa i feed di ninux.yml, che vince sui default del ruolo (e
+      # Molecule usa i default): un feed aggiunto solo lì non arriva nella
+      # build vera. Successo con ninux_theme (build #43 senza il tema).
+      - name: I feed dei default ci sono anche in ninux.yml
+        run: |
+          python3 - <<'PY'
+          import sys, yaml
+          class Loader(yaml.SafeLoader):
+              pass
+          # ninux.yml ha valori cifrati (!vault): qui non servono
+          Loader.add_constructor("!vault", lambda loader, node: None)
+          def feeds(path):
+              data = yaml.load(open(path), Loader=Loader)
+              return {line.split()[1] for line in data["openwrt_feeds"]}
+          defaults = feeds("roles/ninux_build_openwrt/defaults/main.yml")
+          missing = defaults - feeds("ninux.yml")
+          if missing:
+              sys.exit("Feed mancanti in ninux.yml: " + ", ".join(sorted(missing)))
+          print("feed allineati:", ", ".join(sorted(defaults)))
+          PY
+
   test:
     name: Test (simula un device)
     runs-on: ubuntu-latest
