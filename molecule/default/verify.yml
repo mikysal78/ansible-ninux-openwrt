@@ -19,8 +19,8 @@
   vars:
     t_expected:
       VPN-NONE_CP-nessuno:
-        config_yes: ["luci-theme-ninux"]
-        config_no: ["uspot", "zerotier", "wireguard-tools", "kmod-vxlan", "avahi-autoipd"]
+        config_yes: ["luci-theme-ninux", "luci-app-package-manager"]
+        config_no: ["luci-theme-bootstrap", "luci-light", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan", "avahi-autoipd"]
         overlay_yes: ["etc/config/openwisp", "etc/uci-defaults/99-dnsmasq", "etc/uci-defaults/99-hostname"]
         overlay_no:
           - "etc/config/chilli"
@@ -32,8 +32,8 @@
           - "etc/uci-defaults/99-br-cp"
 
       VPN-WireGuard_CP-uspot:
-        config_yes: ["luci-theme-ninux", "uspot", "uspot-www", "uspotfilter", "wireguard-tools", "kmod-wireguard", "kmod-vxlan", "vxlan"]
-        config_no: ["zerotier", "avahi-autoipd"]
+        config_yes: ["luci-theme-ninux", "luci-app-package-manager", "uspot", "uspot-www", "uspotfilter", "wireguard-tools", "kmod-wireguard", "kmod-vxlan", "vxlan"]
+        config_no: ["luci-theme-bootstrap", "luci-light", "zerotier", "avahi-autoipd"]
         overlay_yes: ["etc/config/uspot", "etc/config/openwisp", "etc/uci-defaults/99-dnsmasq"]
         overlay_no:
           - "etc/config/chilli"
@@ -44,8 +44,8 @@
           - "etc/uci-defaults/99-br-cp"
 
       VPN-Dual_CP-uspot:
-        config_yes: ["luci-theme-ninux", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan"]
-        config_no: ["avahi-autoipd"]
+        config_yes: ["luci-theme-ninux", "luci-app-package-manager", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan"]
+        config_no: ["luci-theme-bootstrap", "luci-light", "avahi-autoipd"]
         overlay_yes:
           - "etc/config/uspot"
           - "etc/config/zerotier"
