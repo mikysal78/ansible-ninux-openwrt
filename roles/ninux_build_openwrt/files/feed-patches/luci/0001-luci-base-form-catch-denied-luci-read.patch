@@ -1,0 +1,25 @@
+From: NINUX Basilicata
+Subject: [PATCH] luci-base: form: ignore denied luci config read on login page
+
+form.js reads the 'luci' config as soon as it is loaded. On the login
+page the session is anonymous, rpcd denies uci/get and, since .catch()
+without a handler does not catch anything, the rejection ends up in the
+browser console as "RPCError: RPC call to uci/get failed with error
+-32002: Access denied".
+
+Backport of the form.js hunk of upstream commit a818ac89bb0e
+("luci-base: correctness fixes"), not in openwrt-25.12.
+
+diff --git a/modules/luci-base/htdocs/luci-static/resources/form.js b/modules/luci-base/htdocs/luci-static/resources/form.js
+index 3d87b3d7..d2466748 100644
+--- a/modules/luci-base/htdocs/luci-static/resources/form.js
++++ b/modules/luci-base/htdocs/luci-static/resources/form.js
+@@ -7,7 +7,7 @@
+ 
+ const scope = this;
+ 
+-uci.loadPackage('luci').catch();
++uci.loadPackage('luci').catch(() => {});
+ 
+ const callSessionAccess = rpc.declare({
+ 	object: 'session',

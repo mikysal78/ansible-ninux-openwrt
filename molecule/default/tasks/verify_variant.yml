@@ -83,6 +83,7 @@
     that:
       - "'src-git openwisp_config' in (_feeds_raw.content | b64decode)"
       - "'src-git zerotier' in (_feeds_raw.content | b64decode)"
+      - "'src-git ninux_theme' in (_feeds_raw.content | b64decode)"
       - "'telephony' not in (_feeds_raw.content | b64decode)"
       # coova-chilli e' stato rimosso: il suo feed non deve tornare
       - "'coova-chilli' not in (_feeds_raw.content | b64decode)"

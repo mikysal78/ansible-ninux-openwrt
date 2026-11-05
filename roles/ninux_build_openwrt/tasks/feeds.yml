@@ -61,6 +61,37 @@
     mode: preserve
   changed_when: true
 
+# Patch ai feed: files/feed-patches/<feed>/*.patch, con i percorsi relativi
+# alla radice del feed. Le annulla il "git checkout" all'inizio di questo file.
+# Oggi: luci-base, form.js (catch dell'uci/get rifiutato sulla pagina di login,
+# corretto in LuCI master con a818ac89bb0e, non ancora in openwrt-25.12).
+# Un feed assente (stub di Molecule) si salta; una patch che non si applica
+# piu' ferma la build: va aggiornata o tolta.
+- name: Copia le patch dei feed
+  ansible.builtin.copy:
+    src: "feed-patches/"
+    dest: "{{ openwrt_build_basedir }}/feed-patches/"
+    mode: preserve
+
+- name: Applica le patch ai feed
+  ansible.builtin.shell: |
+    set -e
+    for patch in {{ openwrt_build_basedir }}/feed-patches/*/*.patch; do
+      [ -e "$patch" ] || continue
+      feed=$(basename "$(dirname "$patch")")
+      if [ ! -d "feeds/$feed" ]; then
+        echo "feed $feed assente, salto $(basename "$patch")"
+        continue
+      fi
+      git -C "feeds/$feed" apply "$patch"
+      echo "applicata: $feed/$(basename "$patch")"
+    done
+  args:
+    chdir: "{{ openwrt_src_dir }}"
+    executable: /bin/bash
+  register: _feed_patches
+  changed_when: "'applicata:' in _feed_patches.stdout"
+
 - name: Install feeds
   ansible.builtin.command:
     cmd: ./scripts/feeds install -a -f

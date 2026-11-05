@@ -178,6 +178,9 @@ openwrt_feeds:
   - "src-git openwisp_config https://github.com/mikysal78/openwisp-config.git;fix/sigusr-handlers-startup"
   - "src-git openwisp_monitoring https://github.com/openwisp/openwrt-openwisp-monitoring.git"
   - "src-git zerotier https://github.com/mwarning/zerotier-openwrt.git"
+  # Tema LuCI ninux (modalita' Base/Avanzato). Lo selezionano i .config dei
+  # device, tutti tranne x86_64.
+  - "src-git ninux_theme https://github.com/mikysal78/luci-theme-ninux.git"
 
 # Pacchetti da rimuovere dopo l'installazione dei feed (bug noti)
 openwrt_remove_packages:
