@@ -21,7 +21,12 @@
       VPN-NONE_CP-nessuno:
         config_yes: ["luci-theme-ninux", "luci-app-package-manager"]
         config_no: ["luci-theme-bootstrap", "luci-light", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan"]
-        overlay_yes: ["etc/config/openwisp", "etc/uci-defaults/99-dnsmasq", "etc/uci-defaults/99-hostname"]
+        overlay_yes:
+          - "etc/config/openwisp"
+          - "etc/uci-defaults/96-openwisp-reapply"
+          - "etc/hotplug.d/openwisp/50-ninux-uhttpd-reload"
+          - "etc/uci-defaults/99-dnsmasq"
+          - "etc/uci-defaults/99-hostname"
         overlay_no:
           - "etc/config/chilli"
           - "etc/config/uspot"
@@ -43,7 +48,12 @@
           - "kmod-vxlan"
           - "vxlan"
         config_no: ["luci-theme-bootstrap", "luci-light", "zerotier"]
-        overlay_yes: ["etc/config/uspot", "etc/config/openwisp", "etc/uci-defaults/99-dnsmasq"]
+        overlay_yes:
+          - "etc/config/uspot"
+          - "etc/config/openwisp"
+          - "etc/uci-defaults/96-openwisp-reapply"
+          - "etc/hotplug.d/openwisp/50-ninux-uhttpd-reload"
+          - "etc/uci-defaults/99-dnsmasq"
         overlay_no:
           - "etc/config/chilli"
           - "etc/config/zerotier"
@@ -60,6 +70,8 @@
           - "etc/config/zerotier"
           - "etc/uci-defaults/99-zerotier"
           - "etc/config/openwisp"
+          - "etc/uci-defaults/96-openwisp-reapply"
+          - "etc/hotplug.d/openwisp/50-ninux-uhttpd-reload"
         overlay_no:
           - "etc/config/chilli"
           - "etc/uci-defaults/99-uspot"

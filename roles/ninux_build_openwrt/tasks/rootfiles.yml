@@ -109,6 +109,27 @@
       {{ 'br-lan' if _vpn == 'NONE' else openwisp_orgs[openwrt_org].management_interface }}
     _openwisp_shared_secret: "{{ openwisp_orgs[openwrt_org].shared_secret }}"
 
+- name: Scrivi uci-default 96-openwisp-reapply (riapplica i template dopo un sysupgrade)
+  ansible.builtin.template:
+    src: 96-openwisp-reapply.j2
+    dest: "{{ openwrt_src_dir }}/files/etc/uci-defaults/96-openwisp-reapply"
+    mode: "0755"
+  when: _openwisp_enabled | bool
+
+- name: Crea /etc/hotplug.d/openwisp nell'overlay
+  ansible.builtin.file:
+    path: "{{ openwrt_src_dir }}/files/etc/hotplug.d/openwisp"
+    state: directory
+    mode: "0755"
+  when: _openwisp_enabled | bool
+
+- name: Scrivi l'hotplug che ricarica uhttpd dopo ogni configurazione OpenWISP
+  ansible.builtin.template:
+    src: ninux-uhttpd-reload.j2
+    dest: "{{ openwrt_src_dir }}/files/etc/hotplug.d/openwisp/50-ninux-uhttpd-reload"
+    mode: "0755"
+  when: _openwisp_enabled | bool
+
 # root_files/<org>/ puo' contenerne una copia committata nel repo (e' il caso
 # dell'org di esempio): senza org configurata finirebbe nel firmware con
 # controller e secret di qualcun altro.
