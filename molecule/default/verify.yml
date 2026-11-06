@@ -20,7 +20,7 @@
     t_expected:
       VPN-NONE_CP-nessuno:
         config_yes: ["luci-theme-ninux", "luci-app-package-manager"]
-        config_no: ["luci-theme-bootstrap", "luci-light", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan"]
+        config_no: ["luci-theme-bootstrap", "luci-light", "bind-client", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan"]
         overlay_yes:
           - "etc/config/openwisp"
           - "etc/uci-defaults/96-openwisp-reapply"
@@ -47,7 +47,7 @@
           - "kmod-wireguard"
           - "kmod-vxlan"
           - "vxlan"
-        config_no: ["luci-theme-bootstrap", "luci-light", "zerotier"]
+        config_no: ["luci-theme-bootstrap", "luci-light", "bind-client", "zerotier"]
         overlay_yes:
           - "etc/config/uspot"
           - "etc/config/openwisp"
@@ -64,7 +64,7 @@
 
       VPN-Dual_CP-uspot:
         config_yes: ["luci-theme-ninux", "luci-app-package-manager", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan"]
-        config_no: ["luci-theme-bootstrap", "luci-light"]
+        config_no: ["luci-theme-bootstrap", "luci-light", "bind-client"]
         overlay_yes:
           - "etc/config/uspot"
           - "etc/config/zerotier"
