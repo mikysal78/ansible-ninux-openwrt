@@ -20,7 +20,7 @@
     t_expected:
       VPN-NONE_CP-nessuno:
         config_yes: ["luci", "luci-ssl", "luci-theme-ninux"]
-        config_no: ["bind-client", "bird3c", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan"]
+        config_no: ["bind-client", "bird3c", "partx-utils", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan"]
         overlay_yes:
           - "etc/config/openwisp"
           - "etc/uci-defaults/96-openwisp-reapply"
@@ -48,7 +48,7 @@
           - "kmod-wireguard"
           - "kmod-vxlan"
           - "vxlan"
-        config_no: ["bind-client", "bird3c", "zerotier"]
+        config_no: ["bind-client", "bird3c", "partx-utils", "zerotier"]
         overlay_yes:
           - "etc/config/uspot"
           - "etc/config/openwisp"
@@ -65,7 +65,7 @@
 
       VPN-Dual_CP-uspot:
         config_yes: ["luci", "luci-ssl", "luci-theme-ninux", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan"]
-        config_no: ["bind-client", "bird3c"]
+        config_no: ["bind-client", "bird3c", "partx-utils"]
         overlay_yes:
           - "etc/config/uspot"
           - "etc/config/zerotier"
