@@ -19,8 +19,8 @@
   vars:
     t_expected:
       VPN-NONE_CP-nessuno:
-        config_yes: ["luci-theme-ninux", "luci-app-package-manager"]
-        config_no: ["luci-theme-bootstrap", "luci-light", "bind-client", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan"]
+        config_yes: ["luci", "luci-ssl", "luci-theme-ninux"]
+        config_no: ["bind-client", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan"]
         overlay_yes:
           - "etc/config/openwisp"
           - "etc/uci-defaults/96-openwisp-reapply"
@@ -38,8 +38,9 @@
 
       VPN-WireGuard_CP-uspot:
         config_yes:
+          - "luci"
+          - "luci-ssl"
           - "luci-theme-ninux"
-          - "luci-app-package-manager"
           - "uspot"
           - "uspot-www"
           - "uspotfilter"
@@ -47,7 +48,7 @@
           - "kmod-wireguard"
           - "kmod-vxlan"
           - "vxlan"
-        config_no: ["luci-theme-bootstrap", "luci-light", "bind-client", "zerotier"]
+        config_no: ["bind-client", "zerotier"]
         overlay_yes:
           - "etc/config/uspot"
           - "etc/config/openwisp"
@@ -63,8 +64,8 @@
           - "etc/uci-defaults/99-br-cp"
 
       VPN-Dual_CP-uspot:
-        config_yes: ["luci-theme-ninux", "luci-app-package-manager", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan"]
-        config_no: ["luci-theme-bootstrap", "luci-light", "bind-client"]
+        config_yes: ["luci", "luci-ssl", "luci-theme-ninux", "uspot", "zerotier", "wireguard-tools", "kmod-vxlan"]
+        config_no: ["bind-client"]
         overlay_yes:
           - "etc/config/uspot"
           - "etc/config/zerotier"
