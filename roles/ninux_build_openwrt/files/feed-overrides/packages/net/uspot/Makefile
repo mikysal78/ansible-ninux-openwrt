@@ -1,7 +1,7 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=uspot
-PKG_RELEASE:=1
+PKG_RELEASE:=2
 
 PKG_LICENSE:=GPL-2.0
 PKG_MAINTAINER:=Thibaut VARÈNE <hacks@slashdirt.org>
@@ -42,8 +42,13 @@ define Package/uspot/description
   without the need for extra kernel modules.
 endef
 
+# Ninux: anche il dizionario RADIUS. libradcli non ne installa nessuno e
+# senza /etc/radcli/dictionary uspot-radius non autentica (manca anche le VSA
+# WISPr/ChilliSpot). Il template OpenWISP "Hotspot uspot 2.4GHz" scrive lo
+# stesso file: qui serve perche' il firmware parta gia' funzionante.
 define Package/uspot/conffiles
 /etc/config/uspot
+/etc/radcli/dictionary
 endef
 
 define Package/uspot-www
@@ -89,6 +94,9 @@ define Package/uspot/install
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/files/etc/init.d/uspot $(1)/etc/init.d/uspot
 	$(CP) $(PKG_BUILD_DIR)/files/usr/bin $(1)/usr/
 	$(CP) $(PKG_BUILD_DIR)/files/usr/share/uspot $(1)/usr/share/
+	# Ninux: dizionario radcli 1.3.0 + VSA WISPr (14122) e ChilliSpot (14559)
+	$(INSTALL_DIR) $(1)/etc/radcli
+	$(INSTALL_DATA) ./files/radcli-dictionary $(1)/etc/radcli/dictionary
 endef
 
 define Package/uspot-www/install
